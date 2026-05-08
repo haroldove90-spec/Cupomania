@@ -1,0 +1,6 @@
+{
+  "name": "Cuponmanía",
+  "description": "Motor Creativo para la generación de cupones digitales de alto impacto con IA.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["AI Content Generation", "Visual Asset Design"]
+}
