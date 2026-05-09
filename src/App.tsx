@@ -244,8 +244,10 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
   useEffect(() => {
     setCapturedPhoto(null);
     setRegistrations([]);
-    fetchRegistrations();
-  }, [currentUser.id]);
+    if (currentUser) {
+      fetchRegistrations();
+    }
+  }, [currentUser?.id]);
 
   const fetchRegistrations = async () => {
     try {
@@ -385,9 +387,9 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
     
     try {
       const supabase = getSupabase();
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from('photo_registrations')
-        .delete({ count: 'exact' })
+        .delete()
         .eq('id', id);
 
       if (error) {
@@ -395,25 +397,11 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
         throw error;
       }
       
-      console.log('Delete attempt result - Count:', count, 'ID:', id);
-      
-      if (count === 0 || count === null) {
-        // Fallback: Try without count: exact to see if it makes a difference in some environments
-        const { error: retryError } = await supabase
-          .from('photo_registrations')
-          .delete()
-          .eq('id', id);
-          
-        if (retryError) throw retryError;
-        
-        // If still no indication, we assume it might have worked or failed silently
-        showFeedback('Aviso: El servidor no confirmó el borrado, re-sincronizando...', 'error');
-        fetchRegistrations();
-        return;
-      }
-      
       setRegistrations(prev => prev.filter(r => r.id !== id));
       showFeedback('Registro eliminado con éxito', 'success');
+      
+      // Re-fetch just in case to be sure we are in sync
+      setTimeout(fetchRegistrations, 1000);
     } catch (err: any) {
       console.error('Error deleting registration:', err);
       showFeedback(`Error al eliminar: ${err.message || 'vuelve a intentar'}`, 'error');
@@ -501,45 +489,50 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
                 layout
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-[44px] p-5 shadow-lg border border-black/5 group hover:shadow-2xl transition-all cursor-pointer relative"
+                className="bg-white rounded-3xl p-4 shadow-lg border border-black/5 group hover:shadow-2xl transition-all cursor-pointer relative flex flex-col"
                 onClick={() => setSelectedFullPhoto(reg.photo_url || '')}
               >
-                <div className="aspect-square rounded-[36px] overflow-hidden bg-black/5 mb-6 relative">
+                <div className="w-full h-[200px] rounded-2xl overflow-hidden bg-black/5 mb-4 relative flex items-center justify-center">
                    {reg.photo_url ? (
-                     <img src={reg.photo_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Registro" />
+                     <img 
+                       src={reg.photo_url} 
+                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" 
+                       alt="Registro" 
+                       referrerPolicy="no-referrer"
+                     />
                    ) : (
                      <div className="w-full h-full flex items-center justify-center bg-black/5">
                        <Clock className="w-10 h-10 text-black/10" />
                      </div>
                    )}
-                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                     <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-300" />
+                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                     <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-300" />
                    </div>
-                   <div className="absolute bottom-3 left-3 right-3 text-center">
-                      <div className="inline-flex px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg text-[8px] text-white font-black uppercase tracking-widest gap-3 shadow-lg">
+                   <div className="absolute bottom-2 left-2 right-2 text-center">
+                      <div className="inline-flex px-2 py-1 bg-black/40 backdrop-blur-md rounded-md text-[7px] text-white font-black uppercase tracking-widest gap-2 shadow-lg">
                          <span>{new Date(reg.created_at).toLocaleDateString()}</span>
                          <span className="opacity-50">|</span>
                          <span>{new Date(reg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                       </div>
                    </div>
                 </div>
-                <div className="flex items-center justify-between px-2 pb-2">
+                <div className="flex items-center justify-between px-1">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase text-black/40 tracking-wider mb-1 truncate">
+                    <p className="text-[9px] font-black uppercase text-black/60 tracking-wider mb-0.5 truncate">
                       {reg.user_name || reg.description || 'Registro'}
                     </p>
-                    <p className="font-mono text-[7px] font-bold text-black/20 truncate">{reg.id}</p>
+                    <p className="font-mono text-[6px] font-bold text-black/20 truncate">{reg.id}</p>
                   </div>
-                  <div className="flex items-center gap-2 ml-3">
+                  <div className="flex items-center gap-1.5 ml-2">
                     <button 
                       onClick={(e) => deleteRegistration(reg.id, e)}
-                      className="w-8 h-8 bg-red-50 text-red-500 rounded-[12px] flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                      className="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
                       title="Eliminar registro"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <div className="w-8 h-8 bg-green-50 text-green-500 rounded-[12px] flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-4 h-4" />
+                    <div className="w-7 h-7 bg-green-50 text-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-3.5 h-3.5" />
                     </div>
                   </div>
                 </div>
@@ -2521,10 +2514,31 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const resetAllForms = (user?: UserProfile | null) => {
+    setFormData({
+      nombre_negocio: user?.businessName || '',
+      rubro: '',
+      categoria: '',
+      oferta_principal: '',
+      detalles_adicionales: '',
+      horas_vigencia: '24',
+      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_fin: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      logo_data: user?.photo || '',
+      website: user?.website || ''
+    });
+    setCoupon(null);
+    setRegistrations([]);
+    setCapturedPhoto(null);
+    setNotifForm({ title: '', message: '' });
+    setToast(null);
+  };
+
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('cuponmania_user');
     setActiveView('marketplace');
+    resetAllForms(null);
     showFeedback('Sesión cerrada correctamente');
   };
 
@@ -3208,12 +3222,16 @@ export default function App() {
       const response = await generateCoupon(formData);
       if (response && response.result) {
         setCoupon(response.result);
-        showFeedback('¡Cupón generado con éxito!', 'success');
+        // Usamos un pequeño delay para asegurar que el estado se actualizó y no mostramos error previo
+        setTimeout(() => {
+          showFeedback('¡Cupón generado con éxito!', 'success');
+        }, 100);
       } else {
         throw new Error('La respuesta de la IA llegó vacía o es inválida');
       }
     } catch (error: any) {
       console.error("Error generating coupon:", error);
+      // Solo mostramos el error si el cupón sigue siendo nulo (para evitar el doble mensaje si uno falló pero el otro entró)
       showFeedback(`No se pudo generar el cupón: ${error.message || 'Error de conexión con la IA'}`, 'error');
     } finally {
       setLoading(false);
@@ -3776,6 +3794,7 @@ export default function App() {
         setCurrentRole(userProfile.role);
         setIsAuthModalOpen(false);
         fetchProfiles(); // Sincronizar lista de usuarios inmediatamente
+        resetAllForms(userProfile);
         if (userProfile.role === 'admin') setActiveView('admin_dashboard');
         else if (userProfile.role === 'patrocinador') setActiveView('generator');
         else setActiveView('marketplace');
