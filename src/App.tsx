@@ -143,7 +143,7 @@ const AdminNotificationCenter = ({ showFeedback }: { showFeedback: (msg: string)
 
   const handleSend = async () => {
       if (!notifForm.title || !notifForm.message) {
-          showFeedback('Por favor llena todos los campos');
+          showFeedback('Por favor llena todos los campos', 'error');
           return;
       }
       setSending(true);
@@ -242,8 +242,10 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setCapturedPhoto(null);
+    setRegistrations([]);
     fetchRegistrations();
-  }, []);
+  }, [currentUser.id]);
 
   const fetchRegistrations = async () => {
     try {
@@ -2843,15 +2845,24 @@ export default function App() {
 
   // Auto-sync generator form with sponsor profile
   useEffect(() => {
-    if (activeView === 'generator' && currentUser?.role === 'patrocinador' && !formData.nombre_negocio) {
-      setFormData(prev => ({
-        ...prev,
-        nombre_negocio: currentUser.businessName || '',
-        logo_data: currentUser.photo || '',
-        website: currentUser.website || ''
-      }));
+    if (activeView === 'generator' && currentUser?.role === 'patrocinador') {
+      // If the brand name in the form doesn't match the current user's business name, we reset
+      if (formData.nombre_negocio !== currentUser.businessName) {
+        setFormData({
+          nombre_negocio: currentUser.businessName || '',
+          rubro: '',
+          categoria: '',
+          oferta_principal: '',
+          detalles_adicionales: '',
+          horas_vigencia: '24',
+          fecha_inicio: new Date().toISOString().split('T')[0],
+          fecha_fin: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          logo_data: currentUser.photo || '',
+          website: currentUser.website || ''
+        });
+      }
     }
-  }, [activeView, currentUser]);
+  }, [activeView, currentUser?.id]);
 
   // Fetch coupons from Supabase
   const fetchCoupons = async () => {
@@ -3188,14 +3199,18 @@ export default function App() {
       return;
     }
 
+    setToast(null); // Clear previous messages
     setLoading(true);
+    // Limpiamos el cupón anterior para evitar confusión si la nueva generación tarda o falla
+    setCoupon(null);
+    
     try {
       const response = await generateCoupon(formData);
-      if (response.result) {
+      if (response && response.result) {
         setCoupon(response.result);
         showFeedback('¡Cupón generado con éxito!', 'success');
       } else {
-        throw new Error('La respuesta de la IA llegó vacía');
+        throw new Error('La respuesta de la IA llegó vacía o es inválida');
       }
     } catch (error: any) {
       console.error("Error generating coupon:", error);
