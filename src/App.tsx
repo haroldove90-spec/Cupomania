@@ -1746,7 +1746,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
         className="w-full relative overflow-visible flex justify-center items-start pt-2"
         style={{ height: `${550 * scale + 48}px` }}
       >
-        <div className="flex justify-center overflow-hidden rounded-[40px] shadow-2xl border border-black/5 bg-white" style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}>
+        <div className="flex justify-center overflow-hidden" style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}>
           {coupon.imageData ? (
             <img 
               src={coupon.imageData} 
@@ -1822,18 +1822,17 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
 
   return (
     <div className="w-full h-full min-h-screen overflow-x-hidden pb-40 bg-gray-50/50">
-      <div className="w-full max-w-[1500px] mx-auto px-6 md:px-12 pt-8">
+      <div className="w-full max-w-[1500px] mx-auto px-0 md:px-6 pt-4 mb-12">
         <button 
           onClick={onShowFlyer}
-          className="w-full relative group overflow-hidden active:scale-[0.99] transition-all bg-white flex items-center justify-center mb-8 border-y border-black/5"
+          className="w-full relative group overflow-hidden active:scale-[0.98] transition-all bg-transparent flex items-center justify-center p-0"
         >
           <img 
             src={flyerLink || "https://cossma.com.mx/cuponmaniaflyer1.png"} 
-            className="w-full h-auto max-h-[500px] object-contain group-hover:scale-[1.01] transition-transform duration-1000" 
+            className="w-full h-auto max-h-[600px] object-contain group-hover:drop-shadow-2xl transition-all duration-700" 
             alt="Promociones Destacadas"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
@@ -3808,8 +3807,8 @@ export default function App() {
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           
-          <div className="h-14 md:h-20 flex items-center">
-            <img src="https://cossma.com.mx/cuponmanialogo1.png" alt="Cuponmanía" className="h-[70%] md:h-[80%] w-auto object-contain" />
+          <div className="h-14 md:h-24 flex items-center py-2">
+            <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía" className="h-full w-auto object-contain" />
           </div>
         </div>
 
