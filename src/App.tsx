@@ -49,8 +49,9 @@ import {
   EyeOff,
   Bell,
   Trash2,
-  Send,
+  Archive,
   History,
+  Send,
   CheckCircle,
   CheckCircle2,
   AlertCircle,
@@ -1777,7 +1778,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
 });
 
 
-const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading }: { 
+const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading, isAdmin, onDelete }: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -1788,6 +1789,8 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   users: UserProfile[];
   onShowSponsor: (sponsor: UserProfile) => void;
   isLoading?: boolean;
+  isAdmin?: boolean;
+  onDelete?: (id: string) => void;
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
@@ -1872,16 +1875,34 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {filteredCoupons.map(coupon => (
-            <CouponCard 
-              key={coupon.id} 
-              coupon={coupon} 
-              onSave={onSave} 
-              onLike={onLike}
-              isSaved={savedIds.includes(coupon.id)} 
-              isLiked={likedIds.includes(coupon.id)}
-              sponsor={users.find(u => u.id === coupon.creatorId)}
-              onShowSponsor={onShowSponsor}
-            />
+            <div key={coupon.id} className="space-y-4 group">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary/60 bg-primary/5 px-4 py-1 rounded-full">
+                  {normalizeCategory(coupon.data.categoria)}
+                </span>
+                {isAdmin && onDelete && (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('¿ELIMINAR ESTE CUPÓN DEFINITIVAMENTE DE LA RED?')) onDelete(coupon.id);
+                    }}
+                    className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Eliminar como Administrador"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <CouponCard 
+                key={coupon.id} 
+                coupon={coupon} 
+                onSave={onSave} 
+                onLike={onLike}
+                isSaved={savedIds.includes(coupon.id)} 
+                isLiked={likedIds.includes(coupon.id)}
+                sponsor={users.find(u => u.id === coupon.creatorId)}
+                onShowSponsor={onShowSponsor}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -3097,12 +3118,26 @@ export default function App() {
     try {
       setLoading(true);
       const supabase = getSupabase();
-      const { error } = await supabase
+      
+      console.log('Intentando eliminar cupón:', couponId, 'Rol:', currentRole);
+      
+      const { error, count } = await supabase
         .from('coupons')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', couponId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error de Supabase al borrar:', error);
+        throw error;
+      }
+      
+      if (count === 0) {
+        console.warn('No se eliminó ningún registro. Posible problema de RLS.');
+        showFeedback('No tienes permisos suficientes para eliminar este cupón en el servidor', 'error');
+        // Re-fetch to sync UI
+        fetchCoupons();
+        return;
+      }
       
       // Optimistic update
       setPublishedCoupons(prev => prev.filter(c => c.id !== couponId));
@@ -3111,7 +3146,7 @@ export default function App() {
       // Also refresh to be sure
       fetchCoupons();
     } catch (error) {
-      console.error('Error deleting coupon:', error);
+      console.error('Error deleting coupon fatal:', error);
       showFeedback('Error al eliminar el cupón', 'error');
     } finally {
       setLoading(false);
@@ -3525,7 +3560,7 @@ export default function App() {
             </div>
           </section>
         );
-      case 'marketplace': return <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} />;
+      case 'marketplace': return <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />;
       case 'coupon_counter': return <CouponCounterView currentUser={currentUser!} coupons={activeCoupons} showFeedback={showFeedback} />;
       case 'wallet': 
         return currentUser?.role === 'patrocinador' 
@@ -3593,9 +3628,22 @@ export default function App() {
                   <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-4">Últimos Cupones</p>
                   <div className="space-y-4">
                     {activeCoupons.slice(0, 5).map(c => (
-                      <div key={c.id} className="flex items-center justify-between py-2 border-b border-black/5">
-                        <span className="text-xs font-black uppercase">{c.data.header.nombre_negocio}</span>
-                        <span className="text-[9px] font-black uppercase text-primary bg-primary/10 px-2 py-1 rounded-full">{c.data.oferta.texto}</span>
+                      <div key={c.id} className="flex items-center justify-between py-3 border-b border-black/5 group">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black uppercase">{c.data.header.nombre_negocio}</span>
+                          <span className="text-[8px] font-black uppercase text-black/20 tracking-widest">{new Date(c.publishedAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[9px] font-black uppercase text-primary bg-primary/10 px-2 py-1 rounded-full">{c.data.oferta.texto}</span>
+                          <button 
+                            onClick={() => {
+                              if (window.confirm('¿ELIMINAR CUPÓN DEFINITIVAMENTE?')) handleDeleteCoupon(c.id);
+                            }}
+                            className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
