@@ -1695,19 +1695,27 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
     const updateScale = () => {
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
-        // Evitamos escalas negativas o demasiado pequeñas que colapsen el UI
+        if (width === 0) return; // Wait for layout
+        
         const safeWidth = Math.max(300, width);
         const newScale = Math.max(0.2, Math.min(1, (safeWidth - 16) / 1000));
         setScale(newScale);
       }
     };
     updateScale();
-    // Usamos ResizeObserver para mayor precisión en diferentes navegadores
-    const observer = new ResizeObserver(() => updateScale());
-    if (containerRef.current) observer.observe(containerRef.current);
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      observer = new ResizeObserver(() => {
+        // Use requestAnimationFrame for smoother updates and avoid loop errors
+        requestAnimationFrame(updateScale);
+      });
+      observer.observe(containerRef.current);
+    }
+    
     window.addEventListener('resize', updateScale);
     return () => {
-      observer.disconnect();
+      if (observer) observer.disconnect();
       window.removeEventListener('resize', updateScale);
     };
   }, []);
@@ -1721,9 +1729,9 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
       </div>
       <motion.div 
         className="w-full relative overflow-visible flex justify-center items-start pt-2"
-        style={{ height: `${550 * scale + 24}px` }}
+        style={{ height: `${550 * scale + 48}px` }}
       >
-        <div className="flex justify-center overflow-hidden rounded-2xl" style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}>
+        <div className="flex justify-center overflow-hidden rounded-[40px] shadow-2xl border border-black/5 bg-white" style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}>
           {coupon.imageData ? (
             <img 
               src={coupon.imageData} 
@@ -1783,30 +1791,32 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
-  const categories = ['Todos', ...Array.from(new Set(coupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean);
+  const categories = useMemo(() => 
+    ['Todos', ...Array.from(new Set(coupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean),
+    [coupons]
+  );
   
-  const filteredCoupons = selectedCategory === 'Todos' 
-    ? coupons 
-    : coupons.filter(c => normalizeCategory(c.data.categoria) === selectedCategory);
+  const filteredCoupons = useMemo(() => 
+    selectedCategory === 'Todos' 
+      ? coupons 
+      : coupons.filter(c => normalizeCategory(c.data.categoria) === selectedCategory),
+    [coupons, selectedCategory]
+  );
 
   return (
     <div className="w-full h-full min-h-screen overflow-x-hidden pb-40 bg-gray-50/50">
       <div className="w-full max-w-[1500px] mx-auto px-6 md:px-12 pt-8">
         <button 
           onClick={onShowFlyer}
-          className="w-full relative group overflow-hidden rounded-[32px] sm:rounded-[48px] shadow-2xl border border-black/5 active:scale-[0.99] transition-all bg-gray-100 min-h-[200px] flex items-center justify-center"
+          className="w-full relative group overflow-hidden rounded-[40px] shadow-2xl border border-black/5 active:scale-[0.99] transition-all bg-gray-200 aspect-[21/9] sm:aspect-[3/1] flex items-center justify-center mb-12"
         >
           <img 
             src={flyerLink || "https://cossma.com.mx/cuponmaniaflyer1.png"} 
-            className="w-full h-auto block transition-transform duration-700 group-hover:scale-105" 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
             alt="Promociones Destacadas"
-            fetchPriority="high"
             loading="eager"
-            onLoad={(e) => {
-              (e.target as HTMLImageElement).classList.remove('opacity-0');
-            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
@@ -1834,11 +1844,16 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       {isLoading && coupons.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-40">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-8" />
-          <p className="text-sm font-black uppercase tracking-widest text-black/40">Sincronizando cupones exclusivos...</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 w-full mt-20 opacity-20">
+          <p className="text-sm font-black uppercase tracking-widest text-black/40 animate-pulse">Sincronizando beneficios exclusivos...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 w-full mt-20 px-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse space-y-4">
-                <div className="aspect-[1000/550] bg-gray-200 rounded-3xl" />
+              <div key={i} className="animate-pulse space-y-6">
+                <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                <div className="aspect-[1000/600] bg-gray-200 rounded-[40px]" />
+                <div className="flex gap-3">
+                  <div className="h-14 flex-1 bg-gray-200 rounded-2xl" />
+                  <div className="h-14 flex-1 bg-gray-200 rounded-2xl" />
+                </div>
               </div>
             ))}
           </div>
@@ -2145,7 +2160,7 @@ const ProfileView = ({ user, onUpdate }: { user: UserProfile; onUpdate: (user: U
   );
 };
 
-const SponsorDashboard = ({ coupons, onTogglePublish }: { coupons: CuponConfig[]; onTogglePublish: (id: string, status: boolean) => void }) => {
+const SponsorDashboard = ({ coupons, onTogglePublish, onDelete }: { coupons: CuponConfig[]; onTogglePublish: (id: string, status: boolean) => void; onDelete: (id: string) => void }) => {
   return (
     <div className="w-full h-full p-6 md:p-12 overflow-x-hidden pb-32">
       <div className="mb-8 md:mb-12">
@@ -2183,12 +2198,27 @@ const SponsorDashboard = ({ coupons, onTogglePublish }: { coupons: CuponConfig[]
                   <span className="block text-[9px] font-black uppercase text-black/20 tracking-widest mb-1">CÓDIGO</span>
                   <span className="font-mono font-bold text-2xl tracking-widest text-primary">{coupon.data.diseno.codigo_canje.valor}</span>
                 </div>
-                <button 
-                  onClick={() => onTogglePublish(coupon.id, !!coupon.isPublished)}
-                  className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all w-full sm:w-auto ${coupon.isPublished ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-secondary text-white shadow-lg shadow-secondary/20 hover:scale-105'}`}
-                >
-                  {coupon.isPublished ? 'Retirar' : 'Publicar'}
-                </button>
+                
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => onTogglePublish(coupon.id, !!coupon.isPublished)}
+                    className={`flex-1 sm:flex-none px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${coupon.isPublished ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-secondary text-white shadow-lg shadow-secondary/20 hover:scale-105'}`}
+                  >
+                    {coupon.isPublished ? 'Retirar' : 'Publicar'}
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que quieres eliminar este cupón permanentemente?')) {
+                        onDelete(coupon.id);
+                      }
+                    }}
+                    className="p-4 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all"
+                    title="Eliminar permanentemente"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -2628,7 +2658,7 @@ export default function App() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isFetchingCoupons, setIsFetchingCoupons] = useState(false);
+  const [isFetchingCoupons, setIsFetchingCoupons] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [viewingSponsor, setViewingSponsor] = useState<UserProfile | null>(null);
 
@@ -2704,23 +2734,22 @@ export default function App() {
   const [publishedCoupons, setPublishedCoupons] = useState<CuponConfig[]>([]);
 
   const activeCoupons = useMemo(() => {
-    // Si no hay cupones, retornamos lista vacía rápido
     if (!publishedCoupons.length) return [];
 
     return publishedCoupons.filter(coupon => {
       // 1. Prioridad: Admin y Creador ven siempre sus cupones
-      if (currentUser?.role === 'admin') return true;
+      if (currentRole === 'admin') return true;
       if (currentUser && coupon.creatorId === currentUser.id) return true;
       
-      // 2. Si no hay lista de perfiles, permitimos ver por defecto para evitar pantallas vacías
-      if (!users || users.length === 0) return true;
+      // 2. Si no hay lista de perfiles, permitimos ver por defecto
+      if (!users || users.length <= 1) return true; // <= 1 porque admin se autoincluye
 
       const creator = users.find(u => u.id === coupon.creatorId);
       // 3. Solo filtramos si el perfil dice explícitamente que no está activo
       if (!creator) return true;
       return creator.isActive !== false;
     });
-  }, [publishedCoupons, users, currentUser]);
+  }, [publishedCoupons, users, currentUser, currentRole]);
 
   const existingCategories = Array.from(new Set(activeCoupons.map(c => normalizeCategory(c.data.categoria)))).filter(Boolean);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -2845,8 +2874,22 @@ export default function App() {
     
     // Carga paralela con prioridad
     const loadData = async () => {
-      await fetchCoupons();
-      await fetchProfiles();
+      try {
+        await Promise.all([
+          fetchCoupons(),
+          fetchProfiles(),
+          currentUser ? fetchSavedCoupons() : Promise.resolve()
+        ]);
+        
+        // Cargar flyers
+        const supabase = getSupabase();
+        const { data: flyerData } = await supabase.from('settings').select('*').eq('key', 'flyers').single();
+        if (flyerData) {
+          setFlyerLinks(flyerData.value);
+        }
+      } catch (err) {
+        console.warn('Initial data load partially failed:', err);
+      }
     };
     
     loadData();
@@ -3047,6 +3090,31 @@ export default function App() {
       fetchCoupons();
     } catch (error) {
       console.error('Error updating status:', error);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string) => {
+    try {
+      setLoading(true);
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('coupons')
+        .delete()
+        .eq('id', couponId);
+      
+      if (error) throw error;
+      
+      // Optimistic update
+      setPublishedCoupons(prev => prev.filter(c => c.id !== couponId));
+      showFeedback('Cupón eliminado definitivamente');
+      
+      // Also refresh to be sure
+      fetchCoupons();
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
+      showFeedback('Error al eliminar el cupón', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -3461,7 +3529,7 @@ export default function App() {
       case 'coupon_counter': return <CouponCounterView currentUser={currentUser!} coupons={activeCoupons} showFeedback={showFeedback} />;
       case 'wallet': 
         return currentUser?.role === 'patrocinador' 
-          ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} /> 
+          ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} onDelete={handleDeleteCoupon} /> 
           : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} />;
       case 'profile': 
         return currentUser ? (
@@ -3721,10 +3789,10 @@ export default function App() {
 
       <main className="flex-1 relative w-full h-full overflow-y-auto pt-16 md:pt-24" id="root-scroll-area">
         {renderSidebar()}
-        <section className={`transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'} pb-24 md:pb-0 relative w-full min-h-full`}>
-          {renderMainContent()}
-          
-          {/* Pulsante flotante eliminado por solicitud del usuario */}
+        <section className={`transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'} pb-24 md:pb-0 relative w-full min-h-full flex flex-col`}>
+          <div className="flex-1">
+            {renderMainContent()}
+          </div>
         </section>
 
       </main>
