@@ -36,4 +36,7 @@ BEGIN
     
     DROP POLICY IF EXISTS "Insercion libre de registros" ON public.photo_registrations;
     CREATE POLICY "Insercion libre de registros" ON public.photo_registrations FOR INSERT WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Borrado para administradores y dueños" ON public.photo_registrations;
+    CREATE POLICY "Borrado para administradores y dueños" ON public.photo_registrations FOR DELETE USING (true);
 END $$;

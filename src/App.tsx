@@ -379,18 +379,28 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
 
   const deleteRegistration = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('¿Deseas eliminar este registro de evidencia?')) return;
+    if (!window.confirm('¿ELIMINAR ESTE REGISTRO DEFINITIVAMENTE?')) return;
     
     try {
       const supabase = getSupabase();
-      const { error } = await supabase.from('photo_registrations').delete().eq('id', id);
+      const { error, count } = await supabase
+        .from('photo_registrations')
+        .delete({ count: 'exact' })
+        .eq('id', id);
+
       if (error) throw error;
       
+      if (count === 0) {
+        showFeedback('Error: No se pudo eliminar de la base de datos (Posible falta de permisos RLS)', 'error');
+        fetchRegistrations(); // Sync
+        return;
+      }
+      
       setRegistrations(prev => prev.filter(r => r.id !== id));
-      showFeedback('Registro eliminado', 'success');
+      showFeedback('Registro eliminado con éxito', 'success');
     } catch (err: any) {
       console.error('Error deleting registration:', err);
-      showFeedback('No se pudo eliminar', 'error');
+      showFeedback(`Error al eliminar: ${err.message || 'vuelve a intentar'}`, 'error');
     }
   };
 
@@ -531,9 +541,13 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedFullPhoto(null)}
-            className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 md:p-12"
+            className="fixed inset-0 z-[3000] bg-black flex items-center justify-center p-4 sm:p-12"
           >
-            <button className="absolute top-8 right-8 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setSelectedFullPhoto(null); }}
+              className="absolute top-6 right-6 w-14 h-14 bg-red-600 hover:bg-red-700 shadow-2xl rounded-2xl flex items-center justify-center text-white transition-all z-[3100] active:scale-90"
+              title="Cerrar"
+            >
               <X className="w-8 h-8" />
             </button>
             <motion.img
@@ -541,7 +555,7 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               src={selectedFullPhoto}
-              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+              className="w-full h-auto max-h-full object-contain rounded-xl shadow-2xl"
               alt="Ampliada"
             />
           </motion.div>
@@ -1811,15 +1825,15 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       <div className="w-full max-w-[1500px] mx-auto px-6 md:px-12 pt-8">
         <button 
           onClick={onShowFlyer}
-          className="w-full relative group overflow-hidden rounded-[40px] shadow-2xl border border-black/5 active:scale-[0.99] transition-all bg-gray-200 aspect-[21/9] sm:aspect-[3/1] flex items-center justify-center mb-12"
+          className="w-full relative group overflow-hidden active:scale-[0.99] transition-all bg-white flex items-center justify-center mb-8 border-y border-black/5"
         >
           <img 
             src={flyerLink || "https://cossma.com.mx/cuponmaniaflyer1.png"} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+            className="w-full h-auto max-h-[500px] object-contain group-hover:scale-[1.01] transition-transform duration-1000" 
             alt="Promociones Destacadas"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
@@ -3726,23 +3740,24 @@ export default function App() {
       {/* Auth Modal for Guests */}
       <AnimatePresence>
         {isFlyerFullscreen && (
-          <div className="fixed inset-0 z-[280] flex items-center justify-center bg-black">
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/95 backdrop-blur-3xl px-4">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="relative w-full h-full flex items-center justify-center p-4"
+              className="relative w-full max-w-6xl flex items-center justify-center"
             >
               <img 
                 src={flyerLinks.flyer2} 
-                className="max-w-full max-h-full object-contain shadow-2xl"
+                className="w-full h-auto max-h-[90vh] object-contain shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-2xl"
                 alt="Flyer Detalle"
               />
               <button 
                 onClick={() => setIsFlyerFullscreen(false)}
-                className="absolute top-8 right-8 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white transition-all"
+                className="absolute -top-12 sm:top-4 -right-2 sm:right-4 w-12 h-12 md:w-16 md:h-16 bg-red-600 hover:bg-red-700 shadow-2xl rounded-2xl flex items-center justify-center text-white transition-all z-[2100] active:scale-90"
+                title="Cerrar"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 md:w-8 md:h-8" />
               </button>
             </motion.div>
           </div>
@@ -3793,11 +3808,8 @@ export default function App() {
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           
-          <div className="h-10 md:h-12 flex items-center gap-3">
-            <div className="h-full aspect-square bg-white rounded-xl overflow-hidden p-1.5 shadow-lg border border-white/20">
-              <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmania Logo" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-lg md:text-2xl font-black tracking-tighter block">CUPONMANÍA</span>
+          <div className="h-14 md:h-20 flex items-center">
+            <img src="https://cossma.com.mx/cuponmanialogo1.png" alt="Cuponmanía" className="h-[70%] md:h-[80%] w-auto object-contain" />
           </div>
         </div>
 
