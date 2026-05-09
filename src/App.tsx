@@ -388,11 +388,25 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
         .delete({ count: 'exact' })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error during deletion:', error);
+        throw error;
+      }
       
-      if (count === 0) {
-        showFeedback('Error: No se pudo eliminar de la base de datos (Posible falta de permisos RLS)', 'error');
-        fetchRegistrations(); // Sync
+      console.log('Delete attempt result - Count:', count, 'ID:', id);
+      
+      if (count === 0 || count === null) {
+        // Fallback: Try without count: exact to see if it makes a difference in some environments
+        const { error: retryError } = await supabase
+          .from('photo_registrations')
+          .delete()
+          .eq('id', id);
+          
+        if (retryError) throw retryError;
+        
+        // If still no indication, we assume it might have worked or failed silently
+        showFeedback('Aviso: El servidor no confirmó el borrado, re-sincronizando...', 'error');
+        fetchRegistrations();
         return;
       }
       
@@ -1196,7 +1210,7 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
           {/* Section: Logo (Protagonista) */}
           <div className="flex-1 flex items-center justify-center min-h-[220px]">
              <img 
-               src={logo || config.data.header.logo_url || "https://cossma.com.mx/cuponmania.png"} 
+               src={logo || config?.data?.header?.logo_url || "https://cossma.com.mx/cuponmania.png"} 
                alt="Sponsor Logo" 
                className="w-full max-w-[450px] h-auto max-h-[300px] object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-transform hover:scale-105 duration-700" 
                referrerPolicy="no-referrer" 
@@ -1207,40 +1221,40 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
           {/* Right: Big Impact Offer (Secondary to Logo in layout hierarchy per request) */}
           <div className="flex-1 flex flex-col items-center sm:items-end justify-center text-center sm:text-right gap-6">
             <h2 className="text-[72px] font-black leading-[0.8] tracking-tighter uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white">
-              {config.data.oferta.texto}
+              {config?.data?.oferta?.texto || 'OFERTA ESPECIAL'}
             </h2>
-            <div className="mt-2">
-              <Timer targetDate={config.data.cronometro.timestamp_final} />
+            <div className="mt-2 text-white">
+              <Timer targetDate={config?.data?.cronometro?.timestamp_final || new Date(Date.now() + 86400000).toISOString()} />
             </div>
           </div>
         </div>
 
         {/* Bottom Section: Terms and Validity */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-end justify-between">
-          <div className="max-w-[75%]">
+          <div className="max-w-[75%] overflow-hidden">
             <span className="text-[13px] font-black text-white/60 uppercase tracking-widest block mb-2">Condiciones:</span>
             <div className="text-[20px] font-bold text-white leading-tight">
-               {config.data.condiciones.split('\n').map((line, i) => (
-                 <p key={i} className="flex gap-3 items-start mb-1">
+               {(config?.data?.condiciones || 'Solo aplica en tienda física\nNo válido con otras promociones').split('\n').map((line, i) => (
+                 <p key={i} className="flex gap-3 items-start mb-1 truncate">
                     <span className="text-primary mt-1.5 text-lg">✦</span> {line.replace(/^\*?\s*/, '')}
                  </p>
                ))}
             </div>
           </div>
           
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 shrink-0 ml-4">
             <div className="text-right">
               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-1">Vigencia:</span>
               <span className="text-[14px] font-black text-white/80 uppercase">
-                {config.data.cronometro.fecha_inicio ? new Date(config.data.cronometro.fecha_inicio).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' }) : new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' })}
+                {formatDate(config?.data?.cronometro?.fecha_inicio || new Date().toISOString())}
                 <span className="mx-2 opacity-30">|</span>
-                {config.data.cronometro.fecha_fin ? new Date(config.data.cronometro.fecha_fin).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' }) : new Date(Date.now() + 86400000).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' })}
+                {formatDate(config?.data?.cronometro?.fecha_fin || new Date(Date.now() + 86400000).toISOString())}
               </span>
             </div>
             
             {/* Super discrete watermark */}
             <div className="flex items-center gap-2 opacity-30 grayscale hover:grayscale-0 transition-all">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Auténtico</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Auténtico</span>
               <img src="https://cossma.com.mx/cuponmania.png" alt="Seal" className="h-4 object-contain" />
             </div>
           </div>
@@ -3168,12 +3182,24 @@ export default function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.nombre_negocio || !formData.oferta_principal) {
+      showFeedback('Por favor completa el nombre del negocio y la oferta principal', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await generateCoupon(formData);
-      setCoupon(response.result);
-    } catch (error) {
+      if (response.result) {
+        setCoupon(response.result);
+        showFeedback('¡Cupón generado con éxito!', 'success');
+      } else {
+        throw new Error('La respuesta de la IA llegó vacía');
+      }
+    } catch (error: any) {
       console.error("Error generating coupon:", error);
+      showFeedback(`No se pudo generar el cupón: ${error.message || 'Error de conexión con la IA'}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -3218,8 +3244,38 @@ export default function App() {
               <input type="file" className="hidden" accept="image/*" onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) {
+                  if (file.size > 5 * 1024 * 1024) {
+                    showFeedback('El logo es muy pesado. Usa uno menor a 5MB', 'error');
+                    return;
+                  }
                   const reader = new FileReader();
-                  reader.onloadend = () => setFormData({ ...formData, logo_data: reader.result as string });
+                  reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      let width = img.width;
+                      let height = img.height;
+                      const MAX_SIZE = 800; // Logo doesn't need to be huge
+                      if (width > height) {
+                        if (width > MAX_SIZE) {
+                          height *= MAX_SIZE / width;
+                          width = MAX_SIZE;
+                        }
+                      } else {
+                        if (height > MAX_SIZE) {
+                          width *= MAX_SIZE / height;
+                          height = MAX_SIZE;
+                        }
+                      }
+                      canvas.width = width;
+                      canvas.height = height;
+                      const ctx = canvas.getContext('2d');
+                      ctx?.drawImage(img, 0, 0, width, height);
+                      const compressed = canvas.toDataURL('image/png', 0.8);
+                      setFormData({ ...formData, logo_data: compressed });
+                    };
+                    img.src = event.target?.result as string;
+                  };
                   reader.readAsDataURL(file);
                 }
               }} />

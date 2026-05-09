@@ -82,6 +82,19 @@ Fecha Fin: ${data.fecha_fin}`;
   });
 
   const text = response.text || "";
-  const result = JSON.parse(text);
-  return { result };
+  try {
+    // Robust parsing: search for JSON structure if not directly valid
+    let jsonContent = text;
+    if (text.includes("```json")) {
+      jsonContent = text.split("```json")[1].split("```")[0].trim();
+    } else if (text.includes("```")) {
+      jsonContent = text.split("```")[1].split("```")[0].trim();
+    }
+    
+    const result = JSON.parse(jsonContent);
+    return { result };
+  } catch (error) {
+    console.error("Error parsing Gemini response:", text);
+    throw new Error("La IA devolvió un formato inválido. Intenta de nuevo.");
+  }
 }
