@@ -1933,7 +1933,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   );
 };
 
-const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShowSponsor }: { 
+const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShowSponsor, isLoading }: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -1941,6 +1941,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
   onLike: (id: string) => void;
   users: UserProfile[];
   onShowSponsor: (sponsor: UserProfile) => void;
+  isLoading: boolean;
 }) => {
   const now = new Date();
   const savedCoupons = coupons.filter(c => {
@@ -1962,7 +1963,13 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
         <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Tus beneficios guardados</p>
       </div>
 
-      {savedCoupons.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 animate-pulse">
+           {[1,2,3,4].map(i => (
+             <div key={i} className="bg-black/5 rounded-3xl h-[400px]" />
+           ))}
+        </div>
+      ) : savedCoupons.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-black/20">
           <Heart className="w-16 h-16 mb-4" />
           <p className="font-bold uppercase tracking-widest">Tu cuponera está vacía</p>
@@ -2783,7 +2790,12 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('cuponmania_active_view', activeView);
     setIsSidebarOpen(false);
-  }, [activeView, setIsSidebarOpen]);
+    
+    // Si entramos a la cuponera, forzamos recarga para evitar desfases
+    if (activeView === 'wallet' && currentUser) {
+      fetchSavedCoupons();
+    }
+  }, [activeView, setIsSidebarOpen, currentUser?.id]);
   
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -2817,6 +2829,7 @@ export default function App() {
 
   const existingCategories = Array.from(new Set(activeCoupons.map(c => normalizeCategory(c.data.categoria)))).filter(Boolean);
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [isFetchingSaved, setIsFetchingSaved] = useState(false);
   const [likedIds, setLikedIds] = useState<string[]>(() => {
     const stored = localStorage.getItem('cuponmania_liked');
     return stored ? JSON.parse(stored) : [];
@@ -2970,6 +2983,7 @@ export default function App() {
 
   const fetchSavedCoupons = async () => {
     if (!currentUser) return;
+    setIsFetchingSaved(true);
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
@@ -2983,6 +2997,8 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error fetching saved coupons:', error);
+    } finally {
+      setIsFetchingSaved(false);
     }
   };
 
@@ -3667,7 +3683,7 @@ export default function App() {
       case 'wallet': 
         return currentUser?.role === 'patrocinador' 
           ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} onDelete={handleDeleteCoupon} /> 
-          : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} />;
+          : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingSaved || isFetchingCoupons} />;
       case 'profile': 
         return currentUser ? (
           <ProfileView user={currentUser} onUpdate={(updated) => {
