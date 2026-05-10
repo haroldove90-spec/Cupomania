@@ -371,15 +371,13 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
             </motion.div>
           </motion.div>
 
-          <div className="flex items-center gap-6 mt-4 justify-center">
-            <div className="flex -space-x-4">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 789}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-            <p className="text-[9px] md:text-[10px] font-black uppercase text-black/40 tracking-widest">
+          <div className="flex items-center justify-center mt-4 gap-4">
+            <img 
+              src="https://cossma.com.mx/negocios.png" 
+              alt="Negocios" 
+              className="h-10 md:h-14 w-auto object-contain"
+            />
+            <p className="text-[9px] md:text-[10px] font-black uppercase text-black/40 tracking-widest max-w-[150px] leading-tight text-left">
               +100 negocios locales confían en nosotros
             </p>
           </div>
