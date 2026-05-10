@@ -138,104 +138,250 @@ const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
   );
 };
 
-const LandingPageView = ({ onJoin, onExplore }: { onJoin: () => void; onExplore: () => void }) => {
+const BusinessRegistrationView = ({ onAuth, users, upsertProfile, onBack }: { 
+  onAuth: (user: UserProfile) => void; 
+  users: UserProfile[]; 
+  upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; 
+  onBack: () => void;
+}) => {
+  return (
+    <div className="w-full flex-1 bg-white">
+      <AuthView 
+        initialRole="patrocinador"
+        initialIsRegister={true}
+        onAuth={onAuth}
+        users={users}
+        upsertProfile={upsertProfile}
+        onBack={onBack}
+      />
+    </div>
+  );
+};
+
+const BusinessRegistrationForm = ({ onSubmit, loading, error }: { 
+  onSubmit: (formData: any) => void;
+  loading: boolean;
+  error: string;
+}) => {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    businessName: '',
+    representativeName: '',
+    address: '',
+    locationLink: '',
+    website: '',
+    whatsapp: '',
+    email: '',
+    services: [] as string[],
+    photo: null as string | null
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [newService, setNewService] = useState('');
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setFormData(p => ({ ...p, photo: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const internalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={internalSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+           <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Nombre de Usuario</label>
+            <input required type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none ring-2 ring-transparent focus:ring-secondary/20 transition-all" value={formData.username} onChange={e => setFormData(p => ({ ...p, username: e.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Contraseña</label>
+            <div className="relative">
+              <input required type={showPassword ? "text" : "password"} className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Confirmar Contraseña</label>
+            <input required type={showPassword ? "text" : "password"} className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.confirmPassword} onChange={e => setFormData(p => ({ ...p, confirmPassword: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Logo del Negocio</label>
+            <label className="w-full flex items-center justify-center p-4 bg-gray-50 rounded-2xl cursor-pointer border-2 border-dashed border-black/5 hover:border-secondary/20 transition-all">
+              {formData.photo ? <img src={formData.photo} className="h-12 object-contain" /> : <div className="flex flex-col items-center gap-1 text-black/20"><Camera className="w-5 h-5"/> <span className="text-[8px] font-black uppercase">Subir Logo</span></div>}
+              <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+            </label>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Nombre del Negocio</label>
+            <input required type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.businessName} onChange={e => setFormData(p => ({ ...p, businessName: e.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Representante</label>
+            <input required type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.representativeName} onChange={e => setFormData(p => ({ ...p, representativeName: e.target.value }))} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-black/5">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">WhatsApp</label>
+            <input required type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Email</label>
+            <input required type="email" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Ubicación (Maps)</label>
+            <input required type="url" placeholder="Link de Google Maps" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.locationLink} onChange={e => setFormData(p => ({ ...p, locationLink: e.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Dirección</label>
+            <input required type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={formData.address} onChange={e => setFormData(p => ({ ...p, address: e.target.value }))} />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 pt-4 border-t border-black/5">
+        <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Servicios</label>
+        <div className="flex gap-2">
+          <input type="text" placeholder="Ej: Barbería" className="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={newService} onChange={e => setNewService(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } } }} />
+          <button type="button" onClick={() => { if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } }} className="bg-secondary text-white px-6 rounded-2xl font-black uppercase text-[10px]">Añadir</button>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {formData.services.map((s, i) => (
+            <span key={i} className="bg-secondary/10 text-secondary px-3 py-1.5 rounded-xl text-[9px] font-black uppercase flex items-center gap-2">
+              {s}
+              <button type="button" onClick={() => setFormData(p => ({ ...p, services: p.services.filter((_, idx) => idx !== i) }))} className="text-red-500 hover:scale-110"><X className="w-3 h-3" /></button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {error && <p className="text-red-500 text-center text-[10px] font-black uppercase bg-red-50 p-4 rounded-2xl">{error}</p>}
+
+      <button disabled={loading} type="submit" className="w-full bg-black text-white py-6 rounded-[28px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+        {loading ? 'Procesando Registro...' : 'Registrar mi Negocio Ahora'}
+      </button>
+    </form>
+  );
+};
+
+const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () => void; onExplore: () => void; registrationForm: React.ReactNode }) => {
   return (
     <div className="w-full flex flex-col overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center pt-8 pb-20 px-6 overflow-hidden">
+      <section className="relative w-full min-h-screen flex flex-col items-center pt-20 pb-20 px-6 overflow-hidden bg-white">
         {/* Abstract shapes/blobs */}
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10" />
 
-        <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-[1200px] w-full flex flex-col items-center text-center gap-10">
           <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col gap-8 text-center lg:text-left"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex flex-col gap-6"
           >
-            <div className="inline-flex max-w-fit px-6 py-2 bg-secondary text-white rounded-full mx-auto lg:mx-0 shadow-lg shadow-secondary/20">
+            <div className="inline-flex px-6 py-2 bg-secondary text-white rounded-full mx-auto shadow-lg shadow-secondary/20">
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">¡Lanzamiento Mayo 2024!</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.95] uppercase">
+            <h1 className="text-5xl md:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.95] uppercase max-w-4xl">
               Haz que todo <span className="text-primary italic">Izcalli y Tlalne</span> conozcan tu negocio.
             </h1>
             
-            <p className="text-lg md:text-2xl font-bold text-black/40 uppercase tracking-tight leading-snug max-w-2xl mx-auto lg:mx-0">
+            <p className="text-lg md:text-2xl font-bold text-black/40 uppercase tracking-tight leading-snug max-w-2xl mx-auto">
               Únete a la red de cupones más grande de la zona. <span className="text-black font-black">Registro GRATIS por lanzamiento (Todo Mayo).</span>
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-6 mt-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 justify-center">
               <button 
-                onClick={onJoin}
-                className="group w-full sm:w-auto px-12 py-7 bg-primary text-white rounded-[32px] text-xs font-black uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-4"
+                onClick={() => document.getElementById('registro-seccion')?.scrollIntoView({ behavior: 'smooth' })}
+                className="group w-full sm:w-auto px-10 py-6 bg-primary text-white rounded-[28px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-4"
               >
-                <Store className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                <Store className="w-5 h-5" />
                 Registrar mi Negocio
               </button>
               <button 
                 onClick={onExplore}
-                className="group w-full sm:w-auto px-12 py-7 bg-white text-black border-4 border-black/5 rounded-[32px] text-xs font-black uppercase tracking-widest transition-all hover:bg-black/5 flex items-center justify-center gap-4"
+                className="group w-full sm:w-auto px-10 py-6 bg-white text-black border-4 border-black/5 rounded-[28px] text-[11px] font-black uppercase tracking-widest transition-all hover:bg-black/5 flex items-center justify-center gap-4"
               >
-                <Ticket className="w-6 h-6 text-secondary" />
+                <Ticket className="w-5 h-5 text-secondary" />
                 Explorar Cupones
               </button>
             </div>
-
-            <div className="flex items-center gap-6 mt-8 justify-center lg:justify-start">
-              <div className="flex -space-x-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 123}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] font-black uppercase text-black/40 tracking-widest">
-                +100 negocios ya se unieron
-              </p>
-            </div>
           </motion.div>
 
+          {/* Image specifically placed below the title/buttons as requested */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 1, ease: "backOut" }}
-            className="relative"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative w-full max-w-4xl mt-8"
           >
-            <div className="absolute inset-0 bg-primary/20 rounded-[80px] blur-[80px] -z-10 animate-pulse" />
-            <div className="bg-white p-4 rounded-[64px] shadow-[0_50px_100px_rgba(0,0,0,0.15)] border-8 border-black/5 rotate-3 hover:rotate-0 transition-transform duration-700">
+            <div className="absolute inset-0 bg-primary/20 rounded-[64px] blur-[80px] -z-10" />
+            
+            <div className="bg-white p-2 md:p-4 rounded-[48px] md:rounded-[64px] shadow-2xl border-4 md:border-8 border-black/5">
                <img 
                  src="https://cossma.com.mx/cuponmaniaflyer1.png" 
-                 className="w-full h-auto rounded-[48px] shadow-2xl" 
+                 className="w-full h-auto rounded-[36px] md:rounded-[48px]" 
                  alt="Promoción Cuponmanía" 
                />
             </div>
             
-            {/* Floating badges */}
+            {/* Floating badges - Optimized for responsive */}
             <motion.div 
-              animate={{ y: [0, -20, 0] }}
+              animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -top-10 -right-10 bg-white p-6 rounded-[32px] shadow-2xl border border-black/5 max-w-[200px]"
+              className="absolute -top-6 -right-4 md:-top-10 md:-right-10 bg-white p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl border border-black/5 max-w-[140px] md:max-w-[200px]"
             >
-               <div className="flex items-center gap-3 mb-2">
-                 <div className="p-2 bg-green-500 rounded-lg">
-                    <Zap className="w-4 h-4 text-white" />
+               <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2 text-left">
+                 <div className="p-1.5 md:p-2 bg-green-500 rounded-lg shrink-0">
+                    <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
                  </div>
-                 <span className="text-[10px] font-black uppercase">Ventas hoy</span>
+                 <span className="text-[8px] md:text-[10px] font-black uppercase leading-tight">Ventas hoy</span>
                </div>
-               <div className="text-3xl font-black">+14k</div>
+               <div className="text-xl md:text-3xl font-black text-left">+14k</div>
             </motion.div>
 
             <motion.div 
-              animate={{ y: [0, 20, 0] }}
+              animate={{ y: [0, 10, 0] }}
               transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
-              className="absolute -bottom-10 -left-10 bg-black p-6 rounded-[32px] shadow-2xl max-w-[200px]"
+              className="absolute -bottom-6 -left-4 md:-bottom-10 md:-left-10 bg-black p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl max-w-[140px] md:max-w-[200px]"
             >
-               <p className="text-[9px] font-black uppercase text-white/50 tracking-widest mb-2 leading-tight">Negocios de Izcalli y Tlalne</p>
-               <div className="text-2xl font-black text-white">100% LOCAL</div>
+               <p className="text-[7px] md:text-[9px] font-black uppercase text-white/50 tracking-widest mb-1 md:mb-2 leading-tight text-left">Negocios de Izcalli y Tlalne</p>
+               <div className="text-lg md:text-2xl font-black text-white text-left">100% LOCAL</div>
             </motion.div>
           </motion.div>
+
+          <div className="flex items-center gap-6 mt-12 justify-center">
+            <div className="flex -space-x-4">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 789}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <p className="text-[9px] md:text-[10px] font-black uppercase text-black/40 tracking-widest">
+              +100 negocios locales confían en nosotros
+            </p>
+          </div>
         </div>
       </section>
 
@@ -256,6 +402,20 @@ const LandingPageView = ({ onJoin, onExplore }: { onJoin: () => void; onExplore:
                 <p className="text-black/40 font-bold uppercase text-[11px] leading-relaxed tracking-tight">{item.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Registration Section - THE FORM AS REQUESTED */}
+      <section id="registro-seccion" className="py-32 px-6 bg-white relative">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 italic">Crear Cuenta de Patrocinador</h2>
+            <p className="text-lg font-bold text-black/40 uppercase tracking-widest">Completa tus datos para empezar a publicar cupones hoy mismo.</p>
+          </div>
+
+          <div className="bg-white p-8 md:p-16 rounded-[48px] md:rounded-[64px] shadow-[0_50px_100px_rgba(0,0,0,0.08)] border-8 border-black/5">
+             {registrationForm}
           </div>
         </div>
       </section>
@@ -964,9 +1124,16 @@ const AdminUsersList = ({ users, onToggleStatus, onManageFlyer, onDeleteUser }: 
   );
 };
 
-const AuthView = ({ onAuth, users, upsertProfile, onBack }: { onAuth: (user: UserProfile) => void; users: UserProfile[]; upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; onBack?: () => void }) => {
-  const [isRegister, setIsRegister] = useState(false);
-  const [role, setRole] = useState<UserRole>('usuario');
+const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario', initialIsRegister = false }: { 
+  onAuth: (user: UserProfile) => void; 
+  users: UserProfile[]; 
+  upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; 
+  onBack?: () => void;
+  initialRole?: UserRole;
+  initialIsRegister?: boolean;
+}) => {
+  const [isRegister, setIsRegister] = useState(initialIsRegister);
+  const [role, setRole] = useState<UserRole>(initialRole);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -2908,11 +3075,14 @@ export default function App() {
     return (saved as AppView) || 'landing';
   });
 
+  const [authConfig, setAuthConfig] = useState({
+    initialRole: 'usuario' as UserRole,
+    initialIsRegister: false
+  });
+
   const recordVisit = useCallback(async () => {
     try {
       const supabase = getSupabase();
-      // Incrementar contador usando rpc o update simple si no hay rpc definido
-      // Como definimos la tabla en setup.sql, hacemos un update
       const { data, error } = await supabase
         .from('app_metrics')
         .select('count')
@@ -2920,10 +3090,13 @@ export default function App() {
         .single();
       
       if (!error && data) {
+        const newCount = data.count + 1;
         await supabase
           .from('app_metrics')
-          .update({ count: data.count + 1, updated_at: new Date().toISOString() })
+          .update({ count: newCount, updated_at: new Date().toISOString() })
           .eq('id', 'page_visits');
+        
+        setPageVisits(newCount);
       }
     } catch (e) {
       console.error('Error recording visit:', e);
@@ -2982,16 +3155,9 @@ export default function App() {
     return stored ? JSON.parse(stored) : [];
   });
 
+  const [isRegisteringBusiness, setIsRegisteringBusiness] = useState(false);
+  const [registrationBusinessError, setRegistrationBusinessError] = useState('');
   const [pageVisits, setPageVisits] = useState(0);
-
-  const adminMetrics: AdminMetrics = {
-    totalUsers: users.length,
-    totalSponsors: users.filter(u => u.role === 'patrocinador' && u.isActive).length,
-    totalCoupons: activeCoupons.length,
-    totalRevenue: activeCoupons.length * 1500, // Valor simulado
-    dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
-    pageVisits: pageVisits
-  };
 
   const fetchMetrics = useCallback(async () => {
     try {
@@ -3009,6 +3175,15 @@ export default function App() {
       console.error('Error fetching metrics:', e);
     }
   }, []);
+
+  const adminMetrics: AdminMetrics = {
+    totalUsers: users.length,
+    totalSponsors: users.filter(u => u.role === 'patrocinador' && u.isActive).length,
+    totalCoupons: activeCoupons.length,
+    totalRevenue: activeCoupons.length * 1500, // Valor simulado
+    dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
+    pageVisits: pageVisits
+  };
 
   useEffect(() => {
     if (activeView === 'admin_dashboard' && currentUser?.role === 'admin') {
@@ -3875,7 +4050,60 @@ export default function App() {
   const renderMainContent = () => {
     switch (activeView) {
       case 'landing':
-        return <LandingPageView onJoin={() => setActiveView('register')} onExplore={() => setActiveView('marketplace')} />;
+        return (
+          <LandingPageView 
+            onJoin={() => {}} 
+            onExplore={() => setActiveView('marketplace')} 
+            registrationForm={
+              <BusinessRegistrationForm 
+                loading={isRegisteringBusiness}
+                error={registrationBusinessError}
+                onSubmit={async (data) => {
+                  setIsRegisteringBusiness(true);
+                  setRegistrationBusinessError('');
+                  
+                  if (data.password !== data.confirmPassword) {
+                    setRegistrationBusinessError('Las contraseñas no coinciden');
+                    setIsRegisteringBusiness(false);
+                    return;
+                  }
+
+                  const newUser: UserProfile = {
+                    id: crypto.randomUUID(),
+                    role: 'patrocinador',
+                    name: data.representativeName,
+                    username: data.username,
+                    email: data.email,
+                    whatsapp: data.whatsapp,
+                    website: data.website,
+                    businessName: data.businessName,
+                    representativeName: data.representativeName,
+                    address: data.address,
+                    locationLink: data.locationLink,
+                    services: data.services,
+                    photo: data.photo,
+                    isActive: true,
+                    createdAt: new Date().toISOString()
+                  };
+
+                  try {
+                    const saved = await upsertProfile(newUser);
+                    if (saved) {
+                      setCurrentUser(saved);
+                      setCurrentRole('patrocinador');
+                      setActiveView('generator');
+                      showFeedback(`¡Bienvenido ${saved.businessName}!`);
+                    }
+                  } catch (err: any) {
+                    setRegistrationBusinessError(err.message || 'Error al registrar');
+                  } finally {
+                    setIsRegisteringBusiness(false);
+                  }
+                }}
+              />
+            }
+          />
+        );
       case 'notifications':
         return (
           <section className="flex-1 bg-gray-50 p-6 md:p-12 pb-32">
@@ -4080,7 +4308,12 @@ export default function App() {
         showFeedback(`Bienvenido, ${userProfile.name}`);
       }} 
       users={users} 
-      onBack={() => setActiveView('landing')}
+      onBack={() => {
+        setAuthConfig({ initialRole: 'usuario', initialIsRegister: false });
+        setActiveView('landing');
+      }}
+      initialRole={authConfig.initialRole}
+      initialIsRegister={authConfig.initialIsRegister}
     />;
   }
 
