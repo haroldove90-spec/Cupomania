@@ -299,7 +299,7 @@ const BusinessRegistrationForm = ({ onSubmit, loading, error, onShowPrivacy }: {
   );
 };
 
-const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () => void; onExplore: () => void; registrationForm: React.ReactNode }) => {
+const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }: { onJoin: () => void; onExplore: () => void; registrationForm: React.ReactNode; onShowPrivacy: () => void }) => {
   return (
     <div className="w-full flex flex-col overflow-x-hidden">
       {/* Hero Section */}
@@ -434,6 +434,24 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 bg-gray-50 border-t border-black/5 text-center">
+        <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
+          <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía" className="h-10 object-contain grayscale opacity-50" />
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40">
+            Desarrollada por: <span className="text-black transition-colors hover:text-primary">App Design</span> - Todos los derechos reservados 2026
+          </p>
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={onShowPrivacy}
+              className="text-[9px] font-bold uppercase tracking-widest text-black/40 hover:text-secondary transition-colors"
+            >
+              Aviso de Privacidad
+            </button>
+          </div>
+        </div>
+      </footer>
 
       {/* Watermark Logo */}
       <div className="fixed bottom-6 right-6 z-[100] opacity-30 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
@@ -1525,7 +1543,7 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || (isRegister && !formData.acceptPrivacy)}
             className="w-full bg-black text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-primary transition-all mt-6 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -4169,6 +4187,7 @@ export default function App() {
           <LandingPageView 
             onJoin={() => {}} 
             onExplore={() => setActiveView('wallet')} 
+            onShowPrivacy={() => setActiveView('privacy')}
             registrationForm={
               <BusinessRegistrationForm 
                 loading={isRegisteringBusiness}
