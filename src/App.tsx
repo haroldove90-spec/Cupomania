@@ -1944,17 +1944,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
   isLoading: boolean;
 }) => {
   const now = new Date();
-  const savedCoupons = coupons.filter(c => {
-    if (!savedIds.includes(c.id)) return false;
-    // Auto-delete (filter out) if expired
-    if (c.data.cronometro.fecha_fin) {
-      const expirationDate = new Date(c.data.cronometro.fecha_fin);
-      // We set expiration to the end of the day usually, or based on timestamp_final
-      const finalTime = c.data.cronometro.timestamp_final ? new Date(c.data.cronometro.timestamp_final) : expirationDate;
-      if (now > finalTime) return false;
-    }
-    return true;
-  });
+  const savedCoupons = coupons.filter(c => savedIds.includes(c.id));
 
   return (
     <div className="w-full h-full p-6 md:p-12 overflow-x-hidden">
@@ -2942,7 +2932,13 @@ export default function App() {
             }
           }
         })) as CuponConfig[];
-        setPublishedCoupons(formatted);
+        setPublishedCoupons(prev => {
+          // Mantener cupones que ya estaban en el estado (como los cargados por fetchSavedCoupons)
+          // pero que no están en la lista general de publicados
+          const generalIds = new Set(formatted.map(c => c.id));
+          const extraCoupons = prev.filter(c => !generalIds.has(c.id));
+          return [...formatted, ...extraCoupons];
+        });
       }
     } catch (error) {
       console.error('Error fetching coupons:', error);
@@ -2968,6 +2964,8 @@ export default function App() {
           if (synced && synced.id.includes('-')) {
             setCurrentUser(synced);
             localStorage.setItem('cuponmania_user', JSON.stringify(synced));
+            // Actualizar referencia local para que los llamados concurrentes vean el nuevo ID
+            currentUser.id = synced.id;
           }
         }
 
@@ -2994,13 +2992,26 @@ export default function App() {
   const fetchSavedCoupons = async () => {
     if (!currentUser) return;
     
+    // Si todavía no es UUID, intentamos una sincronización rápida
+    let userId = currentUser.id;
+    if (!userId.includes('-')) {
+      const synced = await upsertProfile(currentUser);
+      if (synced && synced.id.includes('-')) {
+        userId = synced.id;
+        setCurrentUser(synced);
+      } else {
+        console.warn('Cannot fetch saved coupons: User ID is not a UUID');
+        return;
+      }
+    }
+
     setIsFetchingSaved(true);
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
         .from('saved_coupons')
         .select('coupon_id')
-        .eq('user_id', currentUser.id);
+        .eq('user_id', userId);
       
       if (error) throw error;
       if (data) {
