@@ -4,7 +4,7 @@
  */
 
 export type UserRole = 'admin' | 'patrocinador' | 'usuario';
-export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter';
+export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter' | 'privacy';
 
 export interface CouponRedemption {
   id: string;

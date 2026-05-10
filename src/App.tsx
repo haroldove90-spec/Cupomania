@@ -17,6 +17,7 @@ import {
   Copy, 
   Check, 
   ArrowRight,
+  ArrowLeft,
   Store,
   Tag,
   Zap,
@@ -159,10 +160,11 @@ const BusinessRegistrationView = ({ onAuth, users, upsertProfile, onBack }: {
   );
 };
 
-const BusinessRegistrationForm = ({ onSubmit, loading, error }: { 
+const BusinessRegistrationForm = ({ onSubmit, loading, error, onShowPrivacy }: { 
   onSubmit: (formData: any) => void;
   loading: boolean;
   error: string;
+  onShowPrivacy?: () => void;
 }) => {
   const [formData, setFormData] = useState({
     username: '',
@@ -176,7 +178,8 @@ const BusinessRegistrationForm = ({ onSubmit, loading, error }: {
     whatsapp: '',
     email: '',
     services: [] as string[],
-    photo: null as string | null
+    photo: null as string | null,
+    acceptPrivacy: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [newService, setNewService] = useState('');
@@ -274,9 +277,22 @@ const BusinessRegistrationForm = ({ onSubmit, loading, error }: {
         </div>
       </div>
 
+      <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl mt-6">
+        <input 
+          type="checkbox" 
+          id="privacy-business" 
+          checked={formData.acceptPrivacy} 
+          onChange={e => setFormData(p => ({ ...p, acceptPrivacy: e.target.checked }))}
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary"
+        />
+        <label htmlFor="privacy-business" className="text-[10px] font-bold text-black/60 leading-snug">
+          He leído y acepto el <button type="button" onClick={onShowPrivacy} className="text-secondary font-black hover:underline">Aviso de Privacidad</button>. Entiendo que mis datos comerciales serán públicos.
+        </label>
+      </div>
+
       {error && <p className="text-red-500 text-center text-[10px] font-black uppercase bg-red-50 p-4 rounded-2xl">{error}</p>}
 
-      <button disabled={loading} type="submit" className="w-full bg-black text-white py-6 rounded-[28px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+      <button disabled={loading || !formData.acceptPrivacy} type="submit" className="w-full bg-black text-white py-6 rounded-[28px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
         {loading ? 'Procesando Registro...' : 'Registrar mi Negocio Ahora'}
       </button>
     </form>
@@ -1126,13 +1142,76 @@ const AdminUsersList = ({ users, onToggleStatus, onManageFlyer, onDeleteUser }: 
   );
 };
 
-const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario', initialIsRegister = false }: { 
+const PrivacyPolicy = ({ onBack }: { onBack: () => void }) => {
+  return (
+    <div className="max-w-4xl mx-auto py-12 px-6">
+      <button onClick={onBack} className="mb-8 flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Volver
+      </button>
+      
+      <div className="bg-white p-8 md:p-12 rounded-[48px] shadow-xl border-4 border-black/5">
+        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-8 italic">Aviso de Privacidad</h1>
+        
+        <div className="space-y-8 text-black/70 leading-relaxed text-sm md:text-base font-medium">
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Identidad y Domicilio del Responsable</h2>
+            <p>Cuponmanía, con domicilio en Alamo No. 8, Col. Los Reyes Iztacala, Tlalnepantla de Baz, Estado de México, C.P. 54090, es el responsable del tratamiento de los datos personales que usted nos proporcione a través de la plataforma.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Datos Personales que Recabamos</h2>
+            <p className="mb-4">Para llevar a cabo las finalidades descritas en este aviso, utilizaremos los siguientes datos:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Para Negocios/Patrocinadores:</strong> Nombre comercial, nombre del representante legal o contacto, teléfono de contacto (WhatsApp), correo electrónico, ubicación del establecimiento y materiales gráficos (logotipos y artes de cupones).</li>
+              <li><strong>Para Usuarios finales:</strong> Nombre y correo electrónico.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Finalidades del Tratamiento</h2>
+            <p className="mb-4">Los datos personales que recabamos serán utilizados para las siguientes finalidades necesarias para la prestación del servicio:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Gestionar el alta y publicación de su negocio en el directorio comercial de Cuponmanía.</li>
+              <li>Difundir sus ofertas y promociones dentro de la plataforma y redes sociales asociadas.</li>
+              <li>Establecer contacto para fines de soporte técnico, aclaraciones sobre la suscripción y procesos de cobranza.</li>
+              <li>Informar sobre actualizaciones, nuevas funcionalidades o cambios en los términos del servicio.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Transferencia de Datos</h2>
+            <p>Se hace de su conocimiento que la información comercial (nombre del negocio, ofertas, dirección pública y fotos) será visible para todos los usuarios de la aplicación con el fin de facilitar la redención de cupones. Sus datos personales de administración no serán compartidos con terceros, salvo por requerimiento de autoridad competente.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Derechos ARCO</h2>
+            <p>Usted tiene derecho a conocer qué datos personales tenemos de usted, para qué los utilizamos y las condiciones del uso que les damos. Asimismo, es su derecho solicitar la corrección de su información, que la eliminemos de nuestros registros o bases de datos, así como oponerse al uso de sus datos para fines específicos.</p>
+            <p className="mt-4">Para el ejercicio de cualquiera de los derechos ARCO, usted deberá enviar una solicitud por escrito al correo electrónico: <strong>info@appdesigproyectos.com</strong>.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black uppercase text-black mb-4">Uso de Tecnologías de Rastreo</h2>
+            <p>Nuestra plataforma utiliza cookies y herramientas analíticas para optimizar la experiencia de usuario y medir el alcance de las campañas publicitarias. Al navegar en la App, usted acepta el uso de estas tecnologías.</p>
+          </section>
+
+          <section className="pt-8 border-t border-black/5 mt-12">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2">Fecha de última actualización: Mayo 2026.</p>
+            <p>Este aviso puede ser modificado por requerimientos legales o cambios en nuestro modelo de negocio. Cualquier actualización será publicada directamente en esta sección dentro de la App.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario', initialIsRegister = false, onShowPrivacy }: { 
   onAuth: (user: UserProfile) => void; 
   users: UserProfile[]; 
   upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; 
   onBack?: () => void;
   initialRole?: UserRole;
   initialIsRegister?: boolean;
+  onShowPrivacy?: () => void;
 }) => {
   const [isRegister, setIsRegister] = useState(initialIsRegister);
   const [role, setRole] = useState<UserRole>(initialRole);
@@ -1151,7 +1230,8 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
     address: '',
     locationLink: '',
     services: [] as string[],
-    photo: null as string | null
+    photo: null as string | null,
+    acceptPrivacy: false
   });
 
   const [newService, setNewService] = useState('');
@@ -1164,6 +1244,11 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
     setLoading(true);
 
     if (isRegister) {
+      if (!formData.acceptPrivacy) {
+        setError('Debes aceptar el aviso de privacidad');
+        setLoading(false);
+        return;
+      }
       if (formData.password !== formData.confirmPassword) {
         setError('Las contraseñas no coinciden');
         setLoading(false);
@@ -1419,6 +1504,21 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
                 <input required type="email" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
               </div>
             </>
+          )}
+
+          {isRegister && (
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl mt-4">
+              <input 
+                type="checkbox" 
+                id="privacy-auth" 
+                checked={formData.acceptPrivacy} 
+                onChange={e => setFormData(p => ({ ...p, acceptPrivacy: e.target.checked }))}
+                className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="privacy-auth" className="text-[10px] font-bold text-black/60 leading-snug">
+                He leído y acepto el <button type="button" onClick={onShowPrivacy} className="text-secondary font-black hover:underline">Aviso de Privacidad</button>. Entiendo que mis datos serán procesados según este aviso.
+              </label>
+            </div>
           )}
 
           {error && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center mt-4">{error}</p>}
@@ -3977,6 +4077,10 @@ export default function App() {
                  <span>Notificaciones</span>
               </button>
 
+              <button onClick={() => setActiveView('privacy')} className={navItemClasses('privacy')}>
+                 <ShieldCheck className="w-5 h-5" /> <span>Privacidad</span>
+              </button>
+
               {currentRole === 'admin' && (
                 <>
                   <div className="h-px bg-black/5 my-6 mx-2" />
@@ -4069,7 +4173,12 @@ export default function App() {
               <BusinessRegistrationForm 
                 loading={isRegisteringBusiness}
                 error={registrationBusinessError}
+                onShowPrivacy={() => setActiveView('privacy')}
                 onSubmit={async (data) => {
+                  if (!data.acceptPrivacy) {
+                    setRegistrationBusinessError('Debes aceptar el aviso de privacidad');
+                    return;
+                  }
                   setIsRegisteringBusiness(true);
                   setRegistrationBusinessError('');
                   
@@ -4336,12 +4445,15 @@ export default function App() {
         return <AdminFlyerView initialLinks={flyerLinks} onUpdate={updateFlyerSettings} />;
       case 'admin_notifications':
         return <AdminNotificationCenter showFeedback={showFeedback} />;
+      case 'privacy':
+        return <PrivacyPolicy onBack={() => setActiveView('landing')} />;
     }
   };
 
-  if (!currentUser && !['landing'].includes(activeView)) {
+  if (!currentUser && !['landing', 'privacy'].includes(activeView)) {
     return <AuthView 
       upsertProfile={upsertProfile}
+      onShowPrivacy={() => setActiveView('privacy')}
       onAuth={(userProfile) => {
         setCurrentUser(userProfile);
         setCurrentRole(userProfile.role);
@@ -4427,6 +4539,10 @@ export default function App() {
             >
               <AuthView 
                 upsertProfile={upsertProfile}
+                onShowPrivacy={() => {
+                  setActiveView('privacy');
+                  setIsAuthModalOpen(false);
+                }}
                 onAuth={(userProfile) => {
                   setCurrentUser(userProfile);
                   setCurrentRole(userProfile.role);
