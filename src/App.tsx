@@ -287,7 +287,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
   return (
     <div className="w-full flex flex-col overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative w-full min-h-screen flex flex-col items-center pt-20 pb-20 px-6 overflow-hidden bg-white">
+      <section className="relative w-full min-h-screen flex flex-col items-center pt-8 md:pt-12 pb-20 px-6 overflow-hidden bg-white">
         {/* Abstract shapes/blobs */}
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10" />
@@ -299,8 +299,8 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
             transition={{ duration: 0.8 }}
             className="flex flex-col gap-6"
           >
-            <div className="inline-flex px-6 py-2 bg-secondary text-white rounded-full mx-auto shadow-lg shadow-secondary/20">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">¡Lanzamiento Mayo 2024!</span>
+            <div className="inline-flex px-6 py-2 bg-secondary text-white rounded-full mx-auto shadow-lg shadow-secondary/20 whitespace-nowrap">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">¡Lanzamiento Mayo 2026!</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.95] uppercase max-w-4xl">
@@ -338,36 +338,36 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
           >
             <div className="absolute inset-0 bg-primary/20 rounded-[64px] blur-[80px] -z-10" />
             
-            <div className="bg-white p-2 md:p-4 rounded-[48px] md:rounded-[64px] shadow-2xl border-4 md:border-8 border-black/5">
+            <div className="relative">
                <img 
                  src="https://cossma.com.mx/cuponmaniaflyer1.png" 
-                 className="w-full h-auto rounded-[36px] md:rounded-[48px]" 
+                 className="w-full h-auto" 
                  alt="Promoción Cuponmanía" 
                />
             </div>
             
-            {/* Floating badges - Optimized for responsive */}
+            {/* Floating badges - Integrated view without encapsulation */}
             <motion.div 
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -top-6 -right-4 md:-top-10 md:-right-10 bg-white p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl border border-black/5 max-w-[140px] md:max-w-[200px]"
+              className="absolute -top-12 -right-2 md:-top-16 md:-right-4 p-2 font-black z-20"
             >
-               <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2 text-left">
-                 <div className="p-1.5 md:p-2 bg-green-500 rounded-lg shrink-0">
+               <div className="flex items-center gap-2 md:gap-3 mb-1 text-left">
+                 <div className="p-1.5 md:p-2 bg-green-500 rounded-lg shrink-0 shadow-lg">
                     <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
                  </div>
-                 <span className="text-[8px] md:text-[10px] font-black uppercase leading-tight">Ventas hoy</span>
+                 <span className="text-[10px] md:text-[12px] font-black uppercase leading-tight text-black drop-shadow-sm">Ventas hoy</span>
                </div>
-               <div className="text-xl md:text-3xl font-black text-left">+14k</div>
+               <div className="text-2xl md:text-4xl font-black text-left text-black drop-shadow-sm">+14k</div>
             </motion.div>
 
             <motion.div 
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
-              className="absolute -bottom-6 -left-4 md:-bottom-10 md:-left-10 bg-black p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-2xl max-w-[140px] md:max-w-[200px]"
+              className="absolute -bottom-10 -left-2 md:-bottom-16 md:-left-4 p-2 font-black z-20"
             >
-               <p className="text-[7px] md:text-[9px] font-black uppercase text-white/50 tracking-widest mb-1 md:mb-2 leading-tight text-left">Negocios de Izcalli y Tlalne</p>
-               <div className="text-lg md:text-2xl font-black text-white text-left">100% LOCAL</div>
+               <p className="text-[8px] md:text-[10px] font-black uppercase text-black/60 tracking-widest mb-1 leading-tight text-left">Negocios de Izcalli y Tlalne</p>
+               <div className="text-xl md:text-3xl font-black text-black drop-shadow-sm text-left">100% LOCAL</div>
             </motion.div>
           </motion.div>
 
