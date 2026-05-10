@@ -2983,6 +2983,13 @@ export default function App() {
 
   const fetchSavedCoupons = async () => {
     if (!currentUser) return;
+    
+    // Si el ID no es UUID, no intentamos buscar aún para evitar el estado "vacío" erróneo
+    if (!currentUser.id.includes('-')) {
+      console.log('Skipping fetchSavedCoupons: User ID is not a UUID yet');
+      return;
+    }
+
     setIsFetchingSaved(true);
     try {
       const supabase = getSupabase();
@@ -3080,22 +3087,31 @@ export default function App() {
           .delete()
           .match({ user_id: userId, coupon_id: couponId });
         
-        if (!error) {
-          setSavedIds(prev => prev.filter(id => id !== couponId));
-          showFeedback('Cupón eliminado de tu cuponera');
-        }
+        if (error) throw error;
+        
+        setSavedIds(prev => prev.filter(id => id !== couponId));
+        showFeedback('Cupón eliminado de tu cuponera');
       } else {
         const { error } = await supabase
           .from('saved_coupons')
           .insert([{ user_id: userId, coupon_id: couponId }]);
         
-        if (!error) {
+        if (error) {
+          // Si ya existe (por algún motivo de desincronización), lo manejamos como éxito
+          if (error.code === '23505') {
+            setSavedIds(prev => [...new Set([...prev, couponId])]);
+            showFeedback('Este cupón ya estaba en tu cuponera');
+          } else {
+            throw error;
+          }
+        } else {
           setSavedIds(prev => [...prev, couponId]);
-          showFeedback('¡Cupón guardado con éxito!');
+          showFeedback('¡Cupón guardado con éxito!', 'success');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving coupon:', error);
+      showFeedback(`No se pudo guardar: ${error.message || 'Error de conexión'}`, 'error');
     } finally {
       setLoading(false);
     }
