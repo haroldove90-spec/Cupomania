@@ -31,6 +31,7 @@ import {
   X,
   CreditCard,
   User,
+  Calendar,
   LayoutGrid,
   Heart,
   Search,
@@ -428,7 +429,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
   );
 };
 
-const AdminNotificationCenter = ({ showFeedback }: { showFeedback: (msg: string) => void }) => {
+const AdminNotificationCenter = ({ showFeedback }: { showFeedback: (msg: string, type?: 'success' | 'error') => void }) => {
   const [notifForm, setNotifForm] = useState({ title: '', message: '', role: 'all' });
   const [sending, setSending] = useState(false);
 
@@ -678,20 +679,23 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
     
     try {
       const supabase = getSupabase();
-      const { error } = await supabase
-        .from('photo_registrations')
-        .delete()
-        .eq('id', id);
+      
+      // Intentamos borrar de ambas tablas por si acaso
+      // Nota: Supabase no lanza error si no encuentra la fila, por eso ejecutamos ambas o capturamos errores reales
+      const [photoRes, redRes] = await Promise.all([
+        supabase.from('photo_registrations').delete().eq('id', id),
+        supabase.from('coupon_redemptions').delete().eq('id', id)
+      ]);
 
-      if (error) {
-        console.error('Database error during deletion:', error);
-        throw error;
+      if (photoRes.error && redRes.error) {
+        throw new Error(`Error en base de datos: ${photoRes.error.message} / ${redRes.error.message}`);
       }
       
+      // Actualización optimista de la UI
       setRegistrations(prev => prev.filter(r => r.id !== id));
       showFeedback('Registro eliminado con éxito', 'success');
       
-      // Re-fetch just in case to be sure we are in sync
+      // Refrescar para sincronizar
       setTimeout(fetchRegistrations, 1000);
     } catch (err: any) {
       console.error('Error deleting registration:', err);
@@ -703,7 +707,7 @@ const CouponCounterView = ({ currentUser, showFeedback }: { currentUser: UserPro
     <div className="w-full h-full p-6 md:p-16 max-w-[1400px] mx-auto pb-32">
       <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-black/5 pb-8">
         <div>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-3 leading-none">REGISTRO DE CUPONES</h2>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none">REGISTRO DE CUPONES</h2>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-1.5 bg-primary" />
@@ -882,7 +886,7 @@ const AdminFlyerView = ({ initialLinks, onUpdate }: { initialLinks: { flyer1: st
   return (
     <div className="space-y-12 max-w-[1400px] mx-auto py-16 px-6 md:px-12">
       <header className="mb-12 border-b border-black/5 pb-8">
-        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-3 leading-none">Flyers Publi</h2>
+        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none">Flyers Publi</h2>
         <div className="flex items-center gap-4">
           <div className="w-12 h-1.5 bg-primary" />
           <p className="text-black/40 font-bold uppercase text-[11px] tracking-widest">Gestión de publicidad y banners</p>
@@ -2145,6 +2149,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
 
       {/* Categories below Flyer */}
       <div className="max-w-[1500px] mx-auto px-6 md:px-12 pt-10">
+        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-6 leading-none">Explorar Cupones</h2>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
           {categories.map(cat => (
             <button 
@@ -2247,7 +2252,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
   return (
     <div className="w-full h-full p-6 md:p-12 overflow-x-hidden">
       <div className="mb-8 md:mb-12">
-        <h2 className="text-xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter mb-2">Mi Cuponera</h2>
+        <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Mi Cuponera</h2>
         <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Tus beneficios guardados</p>
       </div>
 
@@ -2314,7 +2319,7 @@ const ProfileView = ({ user, onUpdate }: { user: UserProfile; onUpdate: (user: U
   return (
     <div className="w-full h-full p-6 md:p-16 max-w-[1400px] mx-auto overflow-y-auto pb-40">
       <header className="mb-12 border-b border-black/5 pb-8">
-        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-3 leading-none">Mi Perfil</h2>
+        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none">Mi Perfil</h2>
         <div className="flex items-center gap-4">
           <div className="w-12 h-1.5 bg-primary" />
           <p className="text-black/40 font-bold uppercase text-[11px] tracking-widest">Configuración de identidad y negocio</p>
@@ -2502,7 +2507,7 @@ const SponsorDashboard = ({ coupons, onTogglePublish, onDelete }: { coupons: Cup
   return (
     <div className="w-full h-full p-6 md:p-12 overflow-x-hidden pb-32">
       <div className="mb-8 md:mb-12">
-        <h2 className="text-xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter mb-2">Mis Cupones</h2>
+        <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Mis Cupones</h2>
         <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Historial de promociones generadas</p>
       </div>
 
@@ -2823,16 +2828,13 @@ export default function App() {
       website: user?.website || ''
     });
     setCoupon(null);
-    setRegistrations([]);
-    setCapturedPhoto(null);
-    setNotifForm({ title: '', message: '' });
     setToast(null);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('cuponmania_user');
-    setActiveView('marketplace');
+    setActiveView('landing');
     resetAllForms(null);
     showFeedback('Sesión cerrada correctamente');
   };
@@ -3468,7 +3470,7 @@ export default function App() {
 
   const handleRoleChange = (role: UserRole) => {
     setCurrentRole(role);
-    if (role === 'usuario') setActiveView('marketplace');
+    if (role === 'usuario') setActiveView('wallet');
     else if (role === 'patrocinador') setActiveView('generator');
     else if (role === 'admin') setActiveView('admin_dashboard');
   };
@@ -3686,15 +3688,28 @@ export default function App() {
     }
   };
 
-  const renderGeneratorForm = () => (
-    <div className="p-8 flex flex-col gap-8 flex-1">
-      <section className="pt-6">
-        <div className="mb-6">
-          <h3 className="text-[11px] uppercase tracking-[0.2em] text-secondary mb-2 font-black">
-            NUEVO CUPÓN
-          </h3>
-          <p className="text-[10px] text-black/40 uppercase font-bold tracking-widest">Crea una nueva oferta increíble</p>
-        </div>
+  const renderGeneratorForm = () => {
+    const sponsorCouponsCount = activeCoupons.filter(c => c.sponsorId === currentUser?.id).length;
+    
+    return (
+      <div className="p-8 flex flex-col gap-8 flex-1">
+        <header className="mb-2 border-b border-black/5 pb-6">
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none">GENERADOR DE CUPONES</h2>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-1.5 bg-[#F57C00]" />
+              <p className="text-black/40 font-bold uppercase text-[10px] tracking-widest">Generar nueva oferta hoy</p>
+            </div>
+            <div className="px-5 py-2 bg-black text-white rounded-2xl shrink-0">
+               <div className="text-[10px] font-black flex flex-col items-center leading-tight">
+                 <span>{sponsorCouponsCount}</span>
+                 <span className="text-[7px] text-white/50 uppercase tracking-widest">Totales</span>
+               </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="pt-2">
       
       <form onSubmit={handleSubmit} className="space-y-8 pb-10">
         <div className="space-y-6">
@@ -3885,7 +3900,8 @@ export default function App() {
       </form>
     </section>
     </div>
-  );
+    );
+  };
 
   const renderSidebar = () => {
     if (!currentUser) return null;
@@ -3931,9 +3947,9 @@ export default function App() {
               </button>
 
               <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                 <Store className="w-5 h-5" /> <span>Cuponmanía</span>
+                 <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
               </button>
-              
+
               <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
                  <Ticket className="w-5 h-5" /> <span>{currentRole === 'patrocinador' ? 'Mis Cupones' : 'Mi Cuponera'}</span>
               </button>
@@ -4053,7 +4069,7 @@ export default function App() {
         return (
           <LandingPageView 
             onJoin={() => {}} 
-            onExplore={() => setActiveView('marketplace')} 
+            onExplore={() => setActiveView('wallet')} 
             registrationForm={
               <BusinessRegistrationForm 
                 loading={isRegisteringBusiness}
@@ -4110,7 +4126,7 @@ export default function App() {
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-10">
                 <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Notificaciones</h2>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Notificaciones</h2>
                   <p className="text-xs text-black/40 font-bold uppercase tracking-widest">
                     {unreadCount > 0 ? `Tienes ${unreadCount} avisos sin leer` : 'Estás al día con tus novedades'}
                   </p>
@@ -4169,7 +4185,29 @@ export default function App() {
             </div>
           </section>
         );
-      case 'marketplace': return <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />;
+      case 'marketplace': 
+        return (
+          <div className="relative w-full h-full">
+            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />
+            
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-white/30 backdrop-blur-md pointer-events-auto">
+              <div className="bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-[40px] shadow-2xl border border-white/20 text-center max-w-md transform transition-all hover:scale-105">
+                <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-primary animate-pulse">
+                  <Calendar className="w-10 h-10" />
+                </div>
+                <h2 className="text-4xl font-black tracking-tighter uppercase mb-4 leading-none text-black">Próximamente</h2>
+                <p className="text-sm font-bold uppercase tracking-widest text-black/40 mb-8 leading-relaxed">
+                  Estamos preparando la mejor experiencia de ahorro. <br/><span className="text-primary">Disponible en Junio.</span>
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       case 'coupon_counter': return <CouponCounterView currentUser={currentUser!} coupons={activeCoupons} showFeedback={showFeedback} />;
       case 'wallet': 
         return currentUser?.role === 'patrocinador' 
@@ -4228,7 +4266,7 @@ export default function App() {
       case 'admin_dashboard':
         return (
           <div className="p-8 md:p-12">
-            <h2 className="text-3xl font-black uppercase tracking-tighter mb-8">Panel de Control</h2>
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Panel de Control</h2>
             <AdminMetricsView metrics={adminMetrics} />
             <div className="mt-12">
               <h3 className="text-xl font-black uppercase tracking-tight mb-6">Actividad Reciente</h3>
@@ -4275,6 +4313,7 @@ export default function App() {
       case 'admin_users':
         return (
           <div className="p-8 md:p-12">
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Gestión de Cuentas</h2>
             <AdminUsersList 
               users={users} 
               onToggleStatus={(id) => {
@@ -4293,7 +4332,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && !['marketplace', 'landing'].includes(activeView)) {
+  if (!currentUser && !['landing'].includes(activeView)) {
     return <AuthView 
       upsertProfile={upsertProfile}
       onAuth={(userProfile) => {
@@ -4304,7 +4343,7 @@ export default function App() {
         resetAllForms(userProfile);
         if (userProfile.role === 'admin') setActiveView('admin_dashboard');
         else if (userProfile.role === 'patrocinador') setActiveView('generator');
-        else setActiveView('marketplace');
+        else setActiveView('wallet');
         showFeedback(`Bienvenido, ${userProfile.name}`);
       }} 
       users={users} 
@@ -4473,10 +4512,7 @@ export default function App() {
             <span className="text-[7px] font-black uppercase">Crear</span>
           </button>
         )}
-        <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
-          <Store className="w-5 h-5" />
-          <span className="text-[7px] font-black uppercase">Cupones</span>
-        </button>
+        {/* Seccion Cuponmanía oculta */}
         <button onClick={() => setActiveView('notifications')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'notifications' ? 'text-white scale-110' : 'text-white/40'}`}>
           <div className="relative">
             <Bell className="w-5 h-5" />
