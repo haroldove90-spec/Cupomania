@@ -3694,7 +3694,7 @@ export default function App() {
     return (
       <div className="p-8 flex flex-col gap-8 flex-1">
         <header className="mb-2 border-b border-black/5 pb-6">
-          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none">GENERADOR DE CUPONES</h2>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-4 leading-none italic">GENERA TU CUPÓN CON IA</h2>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-1.5 bg-[#F57C00]" />
@@ -4187,24 +4187,36 @@ export default function App() {
         );
       case 'marketplace': 
         return (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full min-h-[calc(100vh-80px)]">
             <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />
             
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-white/30 backdrop-blur-md pointer-events-auto">
-              <div className="bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-[40px] shadow-2xl border border-white/20 text-center max-w-md transform transition-all hover:scale-105">
-                <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-primary animate-pulse">
-                  <Calendar className="w-10 h-10" />
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white/40 backdrop-blur-2xl p-8 md:p-14 rounded-[30px] md:rounded-[60px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border border-white/40 text-center w-full max-w-[90%] md:max-w-lg transform transition-all"
+              >
+                <div className="w-20 h-20 md:w-28 md:h-28 bg-primary/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 md:mb-10 text-primary animate-pulse shadow-inner">
+                  <Calendar className="w-10 h-10 md:w-14 md:h-14" />
                 </div>
-                <h2 className="text-4xl font-black tracking-tighter uppercase mb-4 leading-none text-black">Próximamente</h2>
-                <p className="text-sm font-bold uppercase tracking-widest text-black/40 mb-8 leading-relaxed">
-                  Estamos preparando la mejor experiencia de ahorro. <br/><span className="text-primary">Disponible en Junio.</span>
+                
+                <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-4 md:mb-6 leading-none text-black drop-shadow-sm">
+                  Próximamente
+                </h2>
+                
+                <div className="w-12 md:w-20 h-1.5 md:h-2 bg-primary mx-auto mb-6 md:mb-10 rounded-full" />
+                
+                <p className="text-sm md:text-lg font-bold uppercase tracking-[0.15em] md:tracking-[0.25em] text-black/70 mb-8 md:mb-12 leading-relaxed max-w-sm mx-auto">
+                  Estamos preparando la mayor red de beneficios. <br/>
+                  <span className="text-primary font-black block mt-2">Disponible en Junio.</span>
                 </p>
-                <div className="flex items-center justify-center gap-3">
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                
+                <div className="flex items-center justify-center gap-3 md:gap-5">
+                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         );
