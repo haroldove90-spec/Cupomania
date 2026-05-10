@@ -3070,10 +3070,7 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     return (localStorage.getItem('cuponmania_role') as UserRole) || 'usuario';
   });
-  const [activeView, setActiveView] = useState<AppView>(() => {
-    const saved = localStorage.getItem('cuponmania_active_view');
-    return (saved as AppView) || 'landing';
-  });
+  const [activeView, setActiveView] = useState<AppView>('landing');
 
   const [authConfig, setAuthConfig] = useState({
     initialRole: 'usuario' as UserRole,
@@ -4459,10 +4456,13 @@ export default function App() {
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           
-          <div className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3">
+          <button 
+            onClick={() => setActiveView('landing')}
+            className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía Logo" className="h-full w-auto object-contain" />
             <span className="text-lg md:text-2xl font-black uppercase tracking-tighter italic whitespace-nowrap">Cuponmanía</span>
-          </div>
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
