@@ -4186,7 +4186,7 @@ export default function App() {
         return (
           <LandingPageView 
             onJoin={() => {}} 
-            onExplore={() => setActiveView('wallet')} 
+            onExplore={() => setActiveView('marketplace')} 
             onShowPrivacy={() => setActiveView('privacy')}
             registrationForm={
               <BusinessRegistrationForm 
