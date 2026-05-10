@@ -1,6 +1,6 @@
 {
   "name": "Cuponmanía",
-  "description": "Motor Creativo para la generación de cupones digitales de alto impacto con IA.",
+  "description": "La red de cupones más grande de Izcalli y Tlalnepantla. Generación de ofertas con IA y marketplace local.",
   "requestFramePermissions": ["notifications"],
   "majorCapabilities": ["AI Content Generation", "Visual Asset Design"]
 }

@@ -62,5 +62,17 @@ CREATE POLICY "Dueños pueden actualizar sus cupones"
 ON public.coupons FOR UPDATE
 USING (true);
 
--- Nota: Estas políticas son permisivas para facilitar el desarrollo. 
--- En producción, ajusta 'USING (true)' por verificaciones de 'auth.uid()'.
+-- 6. Tabla de Visitas (Métricas)
+CREATE TABLE IF NOT EXISTS public.app_metrics (
+    id TEXT PRIMARY KEY,
+    count BIGINT DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Insertar contador inicial si no existe
+INSERT INTO public.app_metrics (id, count) VALUES ('page_visits', 0) ON CONFLICT (id) DO NOTHING;
+
+-- Políticas para app_metrics
+ALTER TABLE public.app_metrics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Cualquiera puede ver métricas" ON public.app_metrics FOR SELECT USING (true);
+CREATE POLICY "Cualquiera puede incrementar métricas" ON public.app_metrics FOR UPDATE USING (true);

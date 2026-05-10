@@ -4,7 +4,7 @@
  */
 
 export type UserRole = 'admin' | 'patrocinador' | 'usuario';
-export type AppView = 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter';
+export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter';
 
 export interface CouponRedemption {
   id: string;
@@ -48,6 +48,7 @@ export interface AdminMetrics {
   totalCoupons: number;
   totalRevenue: number;
   dailyActiveUsers: number;
+  pageVisits: number;
 }
 
 export interface CuponConfig {

@@ -107,11 +107,12 @@ const normalizeCategory = (cat: string | undefined): string => {
 
 const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
   const cards = [
+    { title: 'Visitas Totales', value: metrics.pageVisits.toLocaleString(), icon: Eye, color: 'text-secondary', bg: 'bg-secondary/5' },
     { title: 'Ingresos Totales', value: `$${metrics.totalRevenue.toLocaleString()}`, icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
     { title: 'Usuarios Reg.', value: metrics.totalUsers, icon: User, color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'Patrocinadores', value: metrics.totalSponsors, icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-50' },
     { title: 'Cupones Creados', value: metrics.totalCoupons, icon: Ticket, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Usuarios Activos', value: metrics.dailyActiveUsers, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { title: 'Activos Hoy', value: metrics.dailyActiveUsers, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
   ];
 
   return (
@@ -133,6 +134,136 @@ const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
           <div className="text-4xl font-black tracking-tight">{card.value}</div>
         </motion.div>
       ))}
+    </div>
+  );
+};
+
+const LandingPageView = ({ onJoin, onExplore }: { onJoin: () => void; onExplore: () => void }) => {
+  return (
+    <div className="w-full flex flex-col overflow-x-hidden">
+      {/* Hero Section */}
+      <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center pt-8 pb-20 px-6 overflow-hidden">
+        {/* Abstract shapes/blobs */}
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10" />
+
+        <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="flex flex-col gap-8 text-center lg:text-left"
+          >
+            <div className="inline-flex max-w-fit px-6 py-2 bg-secondary text-white rounded-full mx-auto lg:mx-0 shadow-lg shadow-secondary/20">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">¡Lanzamiento Mayo 2024!</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.95] uppercase">
+              Haz que todo <span className="text-primary italic">Izcalli y Tlalne</span> conozcan tu negocio.
+            </h1>
+            
+            <p className="text-lg md:text-2xl font-bold text-black/40 uppercase tracking-tight leading-snug max-w-2xl mx-auto lg:mx-0">
+              Únete a la red de cupones más grande de la zona. <span className="text-black font-black">Registro GRATIS por lanzamiento (Todo Mayo).</span>
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6 mt-4 justify-center lg:justify-start">
+              <button 
+                onClick={onJoin}
+                className="group w-full sm:w-auto px-12 py-7 bg-primary text-white rounded-[32px] text-xs font-black uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-4"
+              >
+                <Store className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                Registrar mi Negocio
+              </button>
+              <button 
+                onClick={onExplore}
+                className="group w-full sm:w-auto px-12 py-7 bg-white text-black border-4 border-black/5 rounded-[32px] text-xs font-black uppercase tracking-widest transition-all hover:bg-black/5 flex items-center justify-center gap-4"
+              >
+                <Ticket className="w-6 h-6 text-secondary" />
+                Explorar Cupones
+              </button>
+            </div>
+
+            <div className="flex items-center gap-6 mt-8 justify-center lg:justify-start">
+              <div className="flex -space-x-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 123}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] font-black uppercase text-black/40 tracking-widest">
+                +100 negocios ya se unieron
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1, ease: "backOut" }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-primary/20 rounded-[80px] blur-[80px] -z-10 animate-pulse" />
+            <div className="bg-white p-4 rounded-[64px] shadow-[0_50px_100px_rgba(0,0,0,0.15)] border-8 border-black/5 rotate-3 hover:rotate-0 transition-transform duration-700">
+               <img 
+                 src="https://cossma.com.mx/cuponmaniaflyer1.png" 
+                 className="w-full h-auto rounded-[48px] shadow-2xl" 
+                 alt="Promoción Cuponmanía" 
+               />
+            </div>
+            
+            {/* Floating badges */}
+            <motion.div 
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute -top-10 -right-10 bg-white p-6 rounded-[32px] shadow-2xl border border-black/5 max-w-[200px]"
+            >
+               <div className="flex items-center gap-3 mb-2">
+                 <div className="p-2 bg-green-500 rounded-lg">
+                    <Zap className="w-4 h-4 text-white" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase">Ventas hoy</span>
+               </div>
+               <div className="text-3xl font-black">+14k</div>
+            </motion.div>
+
+            <motion.div 
+              animate={{ y: [0, 20, 0] }}
+              transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
+              className="absolute -bottom-10 -left-10 bg-black p-6 rounded-[32px] shadow-2xl max-w-[200px]"
+            >
+               <p className="text-[9px] font-black uppercase text-white/50 tracking-widest mb-2 leading-tight">Negocios de Izcalli y Tlalne</p>
+               <div className="text-2xl font-black text-white">100% LOCAL</div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Grid of benefits */}
+      <section className="bg-gray-50 py-24 px-6">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: Zap, title: "Visibilidad Inmediata", desc: "Aparece ante miles de usuarios locales buscando ofertas." },
+              { icon: Store, title: "Perfil de Negocio", desc: "Página dedicada para tu marca con logo y redes sociales." },
+              { icon: Gift, title: "Cupones Dinámicos", desc: "Crea ofertas que caducan automáticamente para generar urgencia." },
+            ].map((item, i) => (
+              <div key={i} className="bg-white p-10 rounded-[40px] border border-black/5 shadow-sm">
+                <div className="p-4 bg-primary/10 rounded-2xl w-fit mb-6 text-primary">
+                  <item.icon className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black uppercase mb-3">{item.title}</h3>
+                <p className="text-black/40 font-bold uppercase text-[11px] leading-relaxed tracking-tight">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Watermark Logo */}
+      <div className="fixed bottom-6 right-6 z-[100] opacity-30 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
+        <img src="https://cossma.com.mx/cuponmania.png" className="w-12 h-12 object-contain" alt="Cuponmanía" />
+      </div>
     </div>
   );
 };
@@ -2774,8 +2905,34 @@ export default function App() {
   });
   const [activeView, setActiveView] = useState<AppView>(() => {
     const saved = localStorage.getItem('cuponmania_active_view');
-    return (saved as AppView) || 'marketplace';
+    return (saved as AppView) || 'landing';
   });
+
+  const recordVisit = useCallback(async () => {
+    try {
+      const supabase = getSupabase();
+      // Incrementar contador usando rpc o update simple si no hay rpc definido
+      // Como definimos la tabla en setup.sql, hacemos un update
+      const { data, error } = await supabase
+        .from('app_metrics')
+        .select('count')
+        .eq('id', 'page_visits')
+        .single();
+      
+      if (!error && data) {
+        await supabase
+          .from('app_metrics')
+          .update({ count: data.count + 1, updated_at: new Date().toISOString() })
+          .eq('id', 'page_visits');
+      }
+    } catch (e) {
+      console.error('Error recording visit:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    recordVisit();
+  }, [recordVisit]);
 
   useEffect(() => {
     localStorage.setItem('cuponmania_active_view', activeView);
@@ -2825,13 +2982,39 @@ export default function App() {
     return stored ? JSON.parse(stored) : [];
   });
 
+  const [pageVisits, setPageVisits] = useState(0);
+
   const adminMetrics: AdminMetrics = {
     totalUsers: users.length,
     totalSponsors: users.filter(u => u.role === 'patrocinador' && u.isActive).length,
     totalCoupons: activeCoupons.length,
     totalRevenue: activeCoupons.length * 1500, // Valor simulado
-    dailyActiveUsers: Math.floor(users.length * 0.4) + 1
+    dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
+    pageVisits: pageVisits
   };
+
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('app_metrics')
+        .select('count')
+        .eq('id', 'page_visits')
+        .single();
+      
+      if (!error && data) {
+        setPageVisits(Number(data.count));
+      }
+    } catch (e) {
+      console.error('Error fetching metrics:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'admin_dashboard' && currentUser?.role === 'admin') {
+      fetchMetrics();
+    }
+  }, [activeView, currentUser, fetchMetrics]);
 
   useEffect(() => {
     localStorage.setItem('cuponmania_liked', JSON.stringify(likedIds));
@@ -3568,6 +3751,10 @@ export default function App() {
             <nav className="flex-1 p-6 space-y-3 overflow-y-auto">
               <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">NAVEGACIÓN</div>
               
+              <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                 <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+              </button>
+
               <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                  <Store className="w-5 h-5" /> <span>Cuponmanía</span>
               </button>
@@ -3687,6 +3874,8 @@ export default function App() {
 
   const renderMainContent = () => {
     switch (activeView) {
+      case 'landing':
+        return <LandingPageView onJoin={() => setActiveView('register')} onExplore={() => setActiveView('marketplace')} />;
       case 'notifications':
         return (
           <section className="flex-1 bg-gray-50 p-6 md:p-12 pb-32">
@@ -3876,7 +4065,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && activeView !== 'marketplace') {
+  if (!currentUser && !['marketplace', 'landing'].includes(activeView)) {
     return <AuthView 
       upsertProfile={upsertProfile}
       onAuth={(userProfile) => {
@@ -3891,6 +4080,7 @@ export default function App() {
         showFeedback(`Bienvenido, ${userProfile.name}`);
       }} 
       users={users} 
+      onBack={() => setActiveView('landing')}
     />;
   }
 
@@ -4088,6 +4278,12 @@ export default function App() {
         isOpen={!!viewingSponsor} 
         onClose={() => setViewingSponsor(null)} 
       />
+
+      {/* Sello de autenticidad Cuponmanía */}
+      <div className="fixed bottom-24 right-6 z-[2000] opacity-20 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
+        <img src="https://cossma.com.mx/cuponmania.png" className="w-10 h-10 object-contain grayscale hover:grayscale-0 transition-all" alt="Sello de Autenticidad" />
+      </div>
+
     </div>
   );
 }
