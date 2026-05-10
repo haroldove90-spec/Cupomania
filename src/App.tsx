@@ -1963,7 +1963,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
         <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Tus beneficios guardados</p>
       </div>
 
-      {isLoading ? (
+      {isLoading && savedCoupons.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 animate-pulse">
            {[1,2,3,4].map(i => (
              <div key={i} className="bg-black/5 rounded-3xl h-[400px]" />
@@ -2961,6 +2961,16 @@ export default function App() {
     // Carga paralela con prioridad
     const loadData = async () => {
       try {
+        // Primero asegurar que el usuario tiene un ID válido de Supabase si está logueado
+        if (currentUser && !currentUser.id.includes('-')) {
+          console.log('Detectado ID no-UUID, sincronizando perfil...');
+          const synced = await upsertProfile(currentUser);
+          if (synced && synced.id.includes('-')) {
+            setCurrentUser(synced);
+            localStorage.setItem('cuponmania_user', JSON.stringify(synced));
+          }
+        }
+
         await Promise.all([
           fetchCoupons(),
           fetchProfiles(),
@@ -2984,12 +2994,6 @@ export default function App() {
   const fetchSavedCoupons = async () => {
     if (!currentUser) return;
     
-    // Si el ID no es UUID, no intentamos buscar aún para evitar el estado "vacío" erróneo
-    if (!currentUser.id.includes('-')) {
-      console.log('Skipping fetchSavedCoupons: User ID is not a UUID yet');
-      return;
-    }
-
     setIsFetchingSaved(true);
     try {
       const supabase = getSupabase();
@@ -3000,7 +3004,50 @@ export default function App() {
       
       if (error) throw error;
       if (data) {
-        setSavedIds(data.map(item => item.coupon_id));
+        const ids = data.map(item => item.coupon_id);
+        setSavedIds(ids);
+        
+        // Si hay IDs guardados que no están en la lista actual de cupones, los traemos por ID
+        // Esto asegura que se vean en la cuponera aunque no estén publicados actualmente
+        const missingIds = ids.filter(id => !publishedCoupons.some(c => c.id === id));
+        if (missingIds.length > 0) {
+          const { data: missingData, error: missingError } = await supabase
+            .from('coupons')
+            .select('*')
+            .in('id', missingIds);
+          
+          if (!missingError && missingData) {
+            const formattedMissing = missingData.map(dbCoupon => ({
+              id: dbCoupon.id,
+              creatorId: dbCoupon.creator_id,
+              status: dbCoupon.status,
+              data: {
+                header: { nombre_negocio: dbCoupon.nombre_negocio, logo_url: dbCoupon.logo_url },
+                oferta: { texto: dbCoupon.oferta_texto, size: 'hero' },
+                categoria: dbCoupon.categoria || 'General',
+                condiciones: dbCoupon.condiciones,
+                cronometro: { 
+                  horas_totales: 24, 
+                  timestamp_final: dbCoupon.timestamp_final,
+                  fecha_inicio: dbCoupon.fecha_inicio,
+                  fecha_fin: dbCoupon.fecha_fin
+                },
+                branding: { watermark_url: '', position: 'bottom-right' },
+                diseno: { 
+                  color_primario: dbCoupon.color_primario, 
+                  color_acento: '#F57C00',
+                  codigo_canje: { tipo: 'QR', valor: dbCoupon.codigo_canje }
+                }
+              }
+            }));
+            setPublishedCoupons(prev => {
+              // Evitar duplicados por si acaso
+              const existingIds = new Set(prev.map(c => c.id));
+              const uniqueNew = formattedMissing.filter(c => !existingIds.has(c.id));
+              return [...prev, ...uniqueNew];
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching saved coupons:', error);
