@@ -292,12 +292,12 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10" />
 
-        <div className="max-w-[1200px] w-full flex flex-col items-center text-center gap-10">
+        <div className="max-w-[1200px] w-full flex flex-col items-center text-center gap-6">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-4"
           >
             <div className="inline-flex px-6 py-2 bg-secondary text-white rounded-full mx-auto shadow-lg shadow-secondary/20 whitespace-nowrap">
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">¡Lanzamiento Mayo 2026!</span>
@@ -307,11 +307,11 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
               Haz que todo <span className="text-primary italic">Izcalli y Tlalne</span> conozcan tu negocio.
             </h1>
             
-            <p className="text-lg md:text-2xl font-bold text-black/40 uppercase tracking-tight leading-snug max-w-2xl mx-auto">
+            <p className="text-base md:text-xl font-bold text-black/40 uppercase tracking-tight leading-snug max-w-2xl mx-auto">
               Únete a la red de cupones más grande de la zona. <span className="text-black font-black">Registro GRATIS por lanzamiento (Todo Mayo).</span>
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 justify-center">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mt-2 justify-center">
               <button 
                 onClick={() => document.getElementById('registro-seccion')?.scrollIntoView({ behavior: 'smooth' })}
                 className="group w-full sm:w-auto px-10 py-6 bg-primary text-white rounded-[28px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-4"
@@ -334,13 +334,13 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative w-full max-w-4xl mt-8"
+            className="relative w-full max-w-4xl mt-4"
           >
             <div className="absolute inset-0 bg-primary/20 rounded-[64px] blur-[80px] -z-10" />
             
             <div className="relative">
                <img 
-                 src="https://cossma.com.mx/cuponmaniaflyer1.png" 
+                 src="https://cossma.com.mx/cuponmaniaflyer2.png" 
                  className="w-full h-auto" 
                  alt="Promoción Cuponmanía" 
                />
@@ -371,7 +371,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
             </motion.div>
           </motion.div>
 
-          <div className="flex items-center gap-6 mt-12 justify-center">
+          <div className="flex items-center gap-6 mt-6 justify-center">
             <div className="flex -space-x-4">
               {[1,2,3,4,5].map(i => (
                 <div key={i} className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
@@ -387,7 +387,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
       </section>
 
       {/* Grid of benefits */}
-      <section className="bg-gray-50 py-24 px-6">
+      <section className="bg-gray-50 py-12 px-6">
         <div className="max-w-[1400px] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -408,14 +408,14 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
       </section>
 
       {/* Registration Section - THE FORM AS REQUESTED */}
-      <section id="registro-seccion" className="py-32 px-6 bg-white relative">
+      <section id="registro-seccion" className="py-16 px-6 bg-white relative">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 italic">Crear Cuenta de Patrocinador</h2>
             <p className="text-lg font-bold text-black/40 uppercase tracking-widest">Completa tus datos para empezar a publicar cupones hoy mismo.</p>
           </div>
 
-          <div className="bg-white p-8 md:p-16 rounded-[48px] md:rounded-[64px] shadow-[0_50px_100px_rgba(0,0,0,0.08)] border-8 border-black/5">
+          <div className="bg-white p-8 md:p-12 rounded-[48px] md:rounded-[64px] shadow-[0_50px_100px_rgba(0,0,0,0.08)] border-8 border-black/5">
              {registrationForm}
           </div>
         </div>
