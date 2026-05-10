@@ -260,9 +260,9 @@ const BusinessRegistrationForm = ({ onSubmit, loading, error }: {
 
       <div className="space-y-2 pt-4 border-t border-black/5">
         <label className="text-[10px] font-black uppercase text-black/40 ml-4 tracking-widest">Servicios</label>
-        <div className="flex gap-2">
-          <input type="text" placeholder="Ej: Barbería" className="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={newService} onChange={e => setNewService(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } } }} />
-          <button type="button" onClick={() => { if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } }} className="bg-secondary text-white px-6 rounded-2xl font-black uppercase text-[10px]">Añadir</button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input type="text" placeholder="Ej: Barbería" className="w-full sm:flex-1 bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold outline-none" value={newService} onChange={e => setNewService(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } } }} />
+          <button type="button" onClick={() => { if(newService.trim()) { setFormData(p => ({ ...p, services: [...p.services, newService.trim()] })); setNewService(''); } }} className="w-full sm:w-auto bg-secondary text-white px-8 py-4 sm:py-0 rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-secondary/20 active:scale-95 transition-all">Añadir</button>
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
           {formData.services.map((s, i) => (
@@ -287,7 +287,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
   return (
     <div className="w-full flex flex-col overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative w-full min-h-screen flex flex-col items-center pt-8 md:pt-12 pb-20 px-6 overflow-hidden bg-white">
+      <section className="relative w-full min-h-screen flex flex-col items-center pt-8 md:pt-12 pb-8 px-6 overflow-hidden bg-white">
         {/* Abstract shapes/blobs */}
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] -z-10" />
@@ -346,32 +346,32 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
                />
             </div>
             
-            {/* Floating badges - Integrated view without encapsulation */}
+            {/* Floating badges - Restored backgrounds as requested, now more discrete */}
             <motion.div 
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -top-12 -right-2 md:-top-16 md:-right-4 p-2 font-black z-20"
+              className="absolute -top-4 -right-4 md:-top-6 md:-right-6 bg-white p-3 md:p-4 rounded-[20px] md:rounded-[24px] shadow-xl border border-black/5 max-w-[110px] md:max-w-[150px] z-20"
             >
-               <div className="flex items-center gap-2 md:gap-3 mb-1 text-left">
-                 <div className="p-1.5 md:p-2 bg-green-500 rounded-lg shrink-0 shadow-lg">
-                    <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
+               <div className="flex items-center gap-2 mb-1 text-left">
+                 <div className="p-1 md:p-1.5 bg-green-500 rounded-lg shrink-0 shadow-md">
+                    <Zap className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                  </div>
-                 <span className="text-[10px] md:text-[12px] font-black uppercase leading-tight text-black drop-shadow-sm">Ventas hoy</span>
+                 <span className="text-[7px] md:text-[9px] font-black uppercase leading-tight text-black">Ventas hoy</span>
                </div>
-               <div className="text-2xl md:text-4xl font-black text-left text-black drop-shadow-sm">+14k</div>
+               <div className="text-lg md:text-2xl font-black text-left text-black">+14k</div>
             </motion.div>
 
             <motion.div 
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
-              className="absolute -bottom-10 -left-2 md:-bottom-16 md:-left-4 p-2 font-black z-20"
+              className="absolute -bottom-4 -left-4 md:-bottom-6 md:-left-6 bg-black p-3 md:p-4 rounded-[20px] md:rounded-[24px] shadow-xl max-w-[110px] md:max-w-[150px] z-20"
             >
-               <p className="text-[8px] md:text-[10px] font-black uppercase text-black/60 tracking-widest mb-1 leading-tight text-left">Negocios de Izcalli y Tlalne</p>
-               <div className="text-xl md:text-3xl font-black text-black drop-shadow-sm text-left">100% LOCAL</div>
+               <p className="text-[6px] md:text-[8px] font-black uppercase text-white/50 tracking-widest mb-1 leading-tight text-left">Negocios Locales</p>
+               <div className="text-base md:text-xl font-black text-white text-left">100% LOCAL</div>
             </motion.div>
           </motion.div>
 
-          <div className="flex items-center gap-6 mt-6 justify-center">
+          <div className="flex items-center gap-6 mt-4 justify-center">
             <div className="flex -space-x-4">
               {[1,2,3,4,5].map(i => (
                 <div key={i} className="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-md">
@@ -387,7 +387,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm }: { onJoin: () =
       </section>
 
       {/* Grid of benefits */}
-      <section className="bg-gray-50 py-12 px-6">
+      <section className="bg-gray-50 py-8 px-6">
         <div className="max-w-[1400px] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -4461,8 +4461,9 @@ export default function App() {
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           
-          <div className="h-14 md:h-24 flex items-center py-2">
-            <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía" className="h-full w-auto object-contain" />
+          <div className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3">
+            <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía Logo" className="h-full w-auto object-contain" />
+            <span className="text-lg md:text-2xl font-black uppercase tracking-tighter italic whitespace-nowrap">Cuponmanía</span>
           </div>
         </div>
 
