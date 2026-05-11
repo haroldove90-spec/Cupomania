@@ -45,6 +45,7 @@ export interface AppNotification {
 export interface AdminMetrics {
   totalUsers: number;
   totalSponsors: number;
+  totalAdmins: number;
   totalCoupons: number;
   totalRevenue: number;
   dailyActiveUsers: number;

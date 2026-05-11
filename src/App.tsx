@@ -37,6 +37,7 @@ import {
   Heart,
   Search,
   Settings,
+  Shield,
   ShieldCheck,
   MessageCircle,
   Menu,
@@ -109,10 +110,11 @@ const normalizeCategory = (cat: string | undefined): string => {
 
 const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
   const cards = [
-    { title: 'Visitas Totales', value: metrics.pageVisits.toLocaleString(), icon: Eye, color: 'text-secondary', bg: 'bg-secondary/5' },
+    { title: 'Visitas Totales', value: metrics.pageVisits.toLocaleString(), icon: Eye, color: 'text-gray-600', bg: 'bg-gray-50' },
     { title: 'Ingresos Totales', value: `$${metrics.totalRevenue.toLocaleString()}`, icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Usuarios Reg.', value: metrics.totalUsers, icon: User, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Usuarios', value: metrics.totalUsers, icon: User, color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'Patrocinadores', value: metrics.totalSponsors, icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { title: 'Administradores', value: metrics.totalAdmins, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
     { title: 'Cupones Creados', value: metrics.totalCoupons, icon: Ticket, color: 'text-purple-600', bg: 'bg-purple-50' },
     { title: 'Activos Hoy', value: metrics.dailyActiveUsers, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
   ];
@@ -3352,10 +3354,11 @@ export default function App() {
   }, []);
 
   const adminMetrics: AdminMetrics = {
-    totalUsers: users.length,
-    totalSponsors: users.filter(u => u.role === 'patrocinador' && u.isActive).length,
+    totalUsers: users.filter(u => u.role === 'usuario').length,
+    totalSponsors: users.filter(u => u.role === 'patrocinador').length,
+    totalAdmins: users.filter(u => u.role === 'admin').length,
     totalCoupons: activeCoupons.length,
-    totalRevenue: activeCoupons.length * 1500, // Valor simulado
+    totalRevenue: users.filter(u => u.role === 'patrocinador').length * 500,
     dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
     pageVisits: pageVisits
   };
