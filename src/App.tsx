@@ -4384,8 +4384,16 @@ export default function App() {
                 
                 <p className="text-sm md:text-lg font-bold uppercase tracking-[0.15em] md:tracking-[0.25em] text-black/70 mb-8 md:mb-12 leading-relaxed max-w-sm mx-auto">
                   Estamos preparando la mayor red de beneficios. <br/>
-                  <span className="text-primary font-black block mt-2">Disponible en Junio.</span>
+                  <span className="text-primary font-black block mt-2 text-xl">Disponible en Junio 2026.</span>
                 </p>
+                
+                <button 
+                  onClick={() => setActiveView('landing')}
+                  className="mb-10 px-12 py-5 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-secondary transition-all active:scale-95 shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 mx-auto"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Regresar al Inicio
+                </button>
                 
                 <div className="flex items-center justify-center gap-3 md:gap-5">
                   <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -4522,7 +4530,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && !['landing', 'privacy', 'marketplace'].includes(activeView)) {
+  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace') {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}
