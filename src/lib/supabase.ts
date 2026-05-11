@@ -10,7 +10,8 @@ export const getSupabase = () => {
   const supabaseAnonKey = metaEnv.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase credentials missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.');
+    console.warn('Supabase credentials missing. Supabase features will be disabled.');
+    return null;
   }
 
   // Ensure URL is just the base URL

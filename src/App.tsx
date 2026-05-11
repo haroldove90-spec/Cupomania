@@ -400,6 +400,27 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }:
         </div>
       </section>
 
+      {/* Social Proof Section */}
+      <section className="bg-white py-12">
+        <div className="max-w-[1400px] mx-auto text-center px-6 flex flex-col items-center">
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">+100 negocios locales confían en nosotros</h2>
+          <div className="w-20 h-1.5 bg-primary mx-auto mt-4 rounded-full" />
+          
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            className="mt-12 p-8 md:p-12 border-4 border-primary/20 rounded-[40px] bg-primary/5 shadow-2xl shadow-primary/20"
+          >
+            <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-primary leading-none mb-2">
+              Lanzamiento de la cuponera
+            </h3>
+            <p className="text-5xl md:text-8xl font-black uppercase tracking-tighter italic text-black leading-none">
+              Junio 2026
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Grid of benefits */}
       <section className="bg-gray-50 py-8 px-6">
         <div className="max-w-[1400px] mx-auto">
@@ -2733,8 +2754,13 @@ const PwaInstallPrompt = ({ onInstall, onDismiss }: { onInstall: () => void; onD
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('cuponmania_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('cuponmania_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error('Error parsing saved user:', e);
+      return null;
+    }
   });
 
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
@@ -2836,6 +2862,7 @@ export default function App() {
       
       // Setup realtime listener for notifications
       const supabase = getSupabase();
+      if (!supabase) return;
       const channel = supabase
         .channel('notifications_changes')
         .on('postgres_changes', { 
@@ -2956,7 +2983,6 @@ export default function App() {
   };
 
   const [users, setUsers] = useState<UserProfile[]>(() => {
-    const saved = localStorage.getItem('cuponmania_users_list');
     const adminUser: UserProfile = {
       id: 'admin-1',
       role: 'admin',
@@ -2967,12 +2993,19 @@ export default function App() {
       isActive: true,
       createdAt: new Date().toISOString()
     };
-    if (!saved) return [adminUser];
-    const list = JSON.parse(saved);
-    if (!list.find((u: any) => u.username === 'appdesign')) {
-      return [...list, adminUser];
+    try {
+      const saved = localStorage.getItem('cuponmania_users_list');
+      if (!saved) return [adminUser];
+      const list = JSON.parse(saved);
+      if (!Array.isArray(list)) return [adminUser];
+      if (!list.find((u: any) => u.username === 'appdesign')) {
+        return [...list, adminUser];
+      }
+      return list;
+    } catch (e) {
+      console.error('Error parsing users list:', e);
+      return [adminUser];
     }
-    return list;
   });
 
   useEffect(() => {
@@ -3010,6 +3043,7 @@ export default function App() {
   const fetchProfiles = async () => {
     try {
       const supabase = getSupabase();
+      if (!supabase) return;
       const { data, error } = await supabase.from('profiles').select('*');
       if (error) {
         console.error('Error fetching profiles from Supabase:', error.message);
@@ -3198,6 +3232,10 @@ export default function App() {
   const recordVisit = useCallback(async () => {
     try {
       const supabase = getSupabase();
+      if (!supabase) {
+        // Fallback or just return if no DB
+        return;
+      }
       const { data, error } = await supabase
         .from('app_metrics')
         .select('count')
@@ -3277,6 +3315,7 @@ export default function App() {
   const fetchMetrics = useCallback(async () => {
     try {
       const supabase = getSupabase();
+      if (!supabase) return;
       const { data, error } = await supabase
         .from('app_metrics')
         .select('count')
@@ -3361,6 +3400,7 @@ export default function App() {
     setIsFetchingCoupons(true);
     try {
       const supabase = getSupabase();
+      if (!supabase) return;
       let query = supabase.from('coupons').select('*');
       
       if (currentRole === 'admin') {
@@ -3481,6 +3521,7 @@ export default function App() {
     setIsFetchingSaved(true);
     try {
       const supabase = getSupabase();
+      if (!supabase) return;
       const { data, error } = await supabase
         .from('saved_coupons')
         .select('coupon_id')
@@ -4186,7 +4227,14 @@ export default function App() {
         return (
           <LandingPageView 
             onJoin={() => {}} 
-            onExplore={() => setActiveView('marketplace')} 
+            onExplore={() => {
+              if (currentUser) {
+                setActiveView('marketplace');
+              } else {
+                document.getElementById('registro-seccion')?.scrollIntoView({ behavior: 'smooth' });
+                showFeedback('¡Regístrate para explorar los cupones!');
+              }
+            }} 
             onShowPrivacy={() => setActiveView('privacy')}
             registrationForm={
               <BusinessRegistrationForm 
