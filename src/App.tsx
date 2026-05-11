@@ -397,26 +397,23 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }:
               +100 negocios locales confían en nosotros
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Social Proof Section */}
-      <section className="bg-white py-12">
-        <div className="max-w-[1400px] mx-auto text-center px-6 flex flex-col items-center">
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">+100 negocios locales confían en nosotros</h2>
-          <div className="w-20 h-1.5 bg-primary mx-auto mt-4 rounded-full" />
-          
           <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            className="mt-12 p-8 md:p-12 border-4 border-primary/20 rounded-[40px] bg-primary/5 shadow-2xl shadow-primary/20"
+            initial={{ scale: 0.9, opacity: 0, rotate: -3 }}
+            whileInView={{ scale: 1, opacity: 1, rotate: -2 }}
+            whileHover={{ rotate: 0, scale: 1.02 }}
+            className="mt-12 p-10 md:p-16 border-4 border-primary/30 rounded-[60px] bg-white shadow-[0_40px_100px_-20px_rgba(245,124,0,0.25)] inline-block relative cursor-default"
           >
-            <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-primary leading-none mb-2">
+            <div className="absolute -top-6 -right-6 bg-secondary text-white px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl skew-x-[-12deg]">
+              ¡Próximamente!
+            </div>
+            <h3 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic text-secondary leading-none mb-3">
               Lanzamiento de la cuponera
             </h3>
-            <p className="text-5xl md:text-8xl font-black uppercase tracking-tighter italic text-black leading-none">
+            <p className="text-6xl md:text-9xl font-black uppercase tracking-tighter italic text-black leading-none drop-shadow-2xl">
               Junio 2026
             </p>
+            <div className="w-40 h-2 bg-primary/20 mx-auto mt-8 rounded-full" />
           </motion.div>
         </div>
       </section>
@@ -3232,23 +3229,38 @@ export default function App() {
   const recordVisit = useCallback(async () => {
     try {
       const supabase = getSupabase();
-      if (!supabase) {
-        // Fallback or just return if no DB
-        return;
-      }
-      const { data, error } = await supabase
+      if (!supabase) return;
+
+      // Usamos update principalmente porque el row ya debe existir por setup.sql
+      // y la política es de UPDATE USING (true)
+      const { data, error: fetchError } = await supabase
         .from('app_metrics')
         .select('count')
         .eq('id', 'page_visits')
-        .single();
+        .maybeSingle();
       
-      if (!error && data) {
-        const newCount = data.count + 1;
+      const currentCount = data?.count ? Number(data.count) : 0;
+      const newCount = currentCount + 1;
+
+      const { error: updateError } = await supabase
+        .from('app_metrics')
+        .update({ 
+          count: newCount, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', 'page_visits');
+      
+      if (!updateError) {
+        setPageVisits(newCount);
+      } else {
+        // Si falla el update (ej: no existe el row), intentamos upsert por si acaso
         await supabase
           .from('app_metrics')
-          .update({ count: newCount, updated_at: new Date().toISOString() })
-          .eq('id', 'page_visits');
-        
+          .upsert({ 
+            id: 'page_visits', 
+            count: newCount, 
+            updated_at: new Date().toISOString() 
+          });
         setPageVisits(newCount);
       }
     } catch (e) {
@@ -4227,14 +4239,7 @@ export default function App() {
         return (
           <LandingPageView 
             onJoin={() => {}} 
-            onExplore={() => {
-              if (currentUser) {
-                setActiveView('marketplace');
-              } else {
-                document.getElementById('registro-seccion')?.scrollIntoView({ behavior: 'smooth' });
-                showFeedback('¡Regístrate para explorar los cupones!');
-              }
-            }} 
+            onExplore={() => setActiveView('marketplace')} 
             onShowPrivacy={() => setActiveView('privacy')}
             registrationForm={
               <BusinessRegistrationForm 
@@ -4517,7 +4522,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && !['landing', 'privacy'].includes(activeView)) {
+  if (!currentUser && !['landing', 'privacy', 'marketplace'].includes(activeView)) {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}
