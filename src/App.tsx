@@ -143,7 +143,7 @@ const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
 const BusinessRegistrationView = ({ onAuth, users, upsertProfile, onBack }: { 
   onAuth: (user: UserProfile) => void; 
   users: UserProfile[]; 
-  upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; 
+  upsertProfile: (user: UserProfile, isRegistration?: boolean) => Promise<UserProfile | null>; 
   onBack: () => void;
 }) => {
   return (
@@ -1243,7 +1243,7 @@ const PrivacyPolicy = ({ onBack }: { onBack: () => void }) => {
 const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario', initialIsRegister = false, onShowPrivacy }: { 
   onAuth: (user: UserProfile) => void; 
   users: UserProfile[]; 
-  upsertProfile: (user: UserProfile) => Promise<UserProfile | null>; 
+  upsertProfile: (user: UserProfile, isRegistration?: boolean) => Promise<UserProfile | null>; 
   onBack?: () => void;
   initialRole?: UserRole;
   initialIsRegister?: boolean;
@@ -1313,7 +1313,7 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
         createdAt: new Date().toISOString()
       };
       
-      upsertProfile(newUser).then((savedProfile) => {
+      upsertProfile(newUser, true).then((savedProfile) => {
         if (!savedProfile) {
           setError('Error al registrar. Verifica tu conexión.');
           setLoading(false);
@@ -2869,8 +2869,8 @@ export default function App() {
           filter: `user_id=eq.${currentUser.id}`
         }, (payload) => {
           fetchNotifications();
-          // If it's a new coupon notification, show flashy alert
-          if (payload.new.title.includes('Cupón')) {
+          // If it's a new coupon notification OR we are admin, show flashy alert
+          if (payload.new.title.includes('Cupón') || currentUser.role === 'admin') {
             setActiveAlert({
               title: payload.new.title,
               message: payload.new.message
@@ -3097,7 +3097,7 @@ export default function App() {
     }
   };
 
-  const upsertProfile = async (profile: UserProfile): Promise<UserProfile | null> => {
+  const upsertProfile = async (profile: UserProfile, isRegistration: boolean = false): Promise<UserProfile | null> => {
     try {
       const supabase = getSupabase();
       
@@ -3131,6 +3131,15 @@ export default function App() {
       }
       
         if (data) {
+          // Si es registro, notificamos al admin
+          if (isRegistration) {
+             await supabase.rpc('notify_admins', {
+               p_title: `Nuevo Registro: ${profile.role === 'patrocinador' ? 'Patrocinador' : 'Usuario'}`,
+               p_message: `${profile.name} se ha unido. ID: @${profile.username}`,
+               p_type: 'info'
+             });
+          }
+
           // No llamamos a fetchProfiles inmediatamente aquí para evitar loops, 
           // pero el return ya lleva la data fresca.
           const freshProfile: UserProfile = {
@@ -4279,7 +4288,7 @@ export default function App() {
                   };
 
                   try {
-                    const saved = await upsertProfile(newUser);
+                    const saved = await upsertProfile(newUser, true);
                     if (saved) {
                       setCurrentUser(saved);
                       setCurrentRole('patrocinador');
@@ -4559,7 +4568,47 @@ export default function App() {
     <div className="h-screen bg-white text-black font-sans flex flex-col antialiased overflow-hidden">
       
       <AnimatePresence>
-        {/* activeAlert removed by user request */}
+        {activeAlert && (
+          <motion.div 
+            initial={{ opacity: 0, y: -100, x: '-50%' }}
+            animate={{ opacity: 1, y: 30, x: '-50%' }}
+            exit={{ opacity: 0, y: -100, x: '-50%' }}
+            className="fixed top-0 left-1/2 z-[3000] w-[90%] max-w-md"
+          >
+            <div className="bg-secondary text-white rounded-[32px] p-8 shadow-[0_40px_80px_rgba(245,124,0,0.4)] border border-white/20 relative overflow-hidden group">
+              {/* Shimmer/Pulse effect */}
+              <motion.div 
+                animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.2, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute -top-1/2 -right-1/2 w-full h-full bg-white rounded-full blur-3xl pointer-events-none"
+              />
+              
+              <div className="relative z-10 flex items-start gap-6">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 animate-pulse">
+                  <Bell className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-black uppercase tracking-tighter leading-none mb-2">{activeAlert.title}</h4>
+                  <p className="text-xs font-bold text-white/80 leading-relaxed uppercase tracking-wider">{activeAlert.message}</p>
+                </div>
+                <button 
+                  onClick={() => setActiveAlert(null)}
+                  className="p-3 hover:bg-white/10 rounded-xl transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Progress bar for auto-hide */}
+              <motion.div 
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: 10, ease: 'linear' }}
+                className="absolute bottom-0 left-0 h-1.5 bg-white/30"
+              />
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Toast Feedback */}
