@@ -15,7 +15,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON public.app_metrics TO anon, authenticated;
 
--- Reiniciar políticas por si acaso
+-- Reiniciar políticas para asegurar permisos totales en métricas (necesario para upsert)
 DROP POLICY IF EXISTS "Cualquiera puede ver métricas" ON public.app_metrics;
 CREATE POLICY "Cualquiera puede ver métricas" ON public.app_metrics FOR SELECT USING (true);
 
@@ -24,3 +24,6 @@ CREATE POLICY "Cualquiera puede incrementar métricas" ON public.app_metrics FOR
 
 DROP POLICY IF EXISTS "Cualquiera puede insertar métricas" ON public.app_metrics;
 CREATE POLICY "Cualquiera puede insertar métricas" ON public.app_metrics FOR INSERT WITH CHECK (true);
+
+-- Asegurar que el registro base exista
+INSERT INTO public.app_metrics (id, count) VALUES ('page_visits', 0) ON CONFLICT (id) DO NOTHING;

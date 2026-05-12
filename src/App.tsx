@@ -3248,9 +3248,11 @@ export default function App() {
       if (!supabase) return;
 
       // Usamos el RPC para incremento atómico y evitar problemas de concurrencia
+      console.info('Intentando registrar visita vía RPC...');
       const { error } = await supabase.rpc('increment_page_visits');
       
       if (error) {
+        console.warn('RPC falló, intentando fallback manual:', error.message);
         // Fallback si el RPC no existe aún
         const { data } = await supabase
           .from('app_metrics')
@@ -3259,11 +3261,18 @@ export default function App() {
           .maybeSingle();
         
         const newCount = (data?.count ? Number(data.count) : 0) + 1;
-        await supabase
+        const { error: upsertError } = await supabase
           .from('app_metrics')
           .upsert({ id: 'page_visits', count: newCount, updated_at: new Date().toISOString() });
-        setPageVisits(newCount);
+        
+        if (upsertError) {
+          console.error('Error crítico al registrar visita (Fallback también falló):', upsertError.message);
+        } else {
+          console.info('Visita registrada correctamente (Fallback).');
+          setPageVisits(newCount);
+        }
       } else {
+        console.info('Visita registrada correctamente vía RPC.');
         // Recargamos el valor fresco para el estado local
         const { data } = await supabase
           .from('app_metrics')
@@ -3341,7 +3350,7 @@ export default function App() {
         .from('app_metrics')
         .select('count')
         .eq('id', 'page_visits')
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         setPageVisits(Number(data.count));
