@@ -3230,7 +3230,12 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     return (localStorage.getItem('cuponmania_role') as UserRole) || 'usuario';
   });
-  const [activeView, setActiveView] = useState<AppView>('landing');
+  const [activeView, setActiveView] = useState<AppView>(() => {
+    const savedRole = localStorage.getItem('cuponmania_role') as UserRole;
+    if (savedRole === 'admin') return 'admin_dashboard';
+    if (savedRole === 'patrocinador') return 'generator';
+    return 'landing';
+  });
 
   const [authConfig, setAuthConfig] = useState({
     initialRole: 'usuario' as UserRole,
@@ -3242,37 +3247,30 @@ export default function App() {
       const supabase = getSupabase();
       if (!supabase) return;
 
-      // Usamos update principalmente porque el row ya debe existir por setup.sql
-      // y la política es de UPDATE USING (true)
-      const { data, error: fetchError } = await supabase
-        .from('app_metrics')
-        .select('count')
-        .eq('id', 'page_visits')
-        .maybeSingle();
+      // Usamos el RPC para incremento atómico y evitar problemas de concurrencia
+      const { error } = await supabase.rpc('increment_page_visits');
       
-      const currentCount = data?.count ? Number(data.count) : 0;
-      const newCount = currentCount + 1;
-
-      const { error: updateError } = await supabase
-        .from('app_metrics')
-        .update({ 
-          count: newCount, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', 'page_visits');
-      
-      if (!updateError) {
-        setPageVisits(newCount);
-      } else {
-        // Si falla el update (ej: no existe el row), intentamos upsert por si acaso
+      if (error) {
+        // Fallback si el RPC no existe aún
+        const { data } = await supabase
+          .from('app_metrics')
+          .select('count')
+          .eq('id', 'page_visits')
+          .maybeSingle();
+        
+        const newCount = (data?.count ? Number(data.count) : 0) + 1;
         await supabase
           .from('app_metrics')
-          .upsert({ 
-            id: 'page_visits', 
-            count: newCount, 
-            updated_at: new Date().toISOString() 
-          });
+          .upsert({ id: 'page_visits', count: newCount, updated_at: new Date().toISOString() });
         setPageVisits(newCount);
+      } else {
+        // Recargamos el valor fresco para el estado local
+        const { data } = await supabase
+          .from('app_metrics')
+          .select('count')
+          .eq('id', 'page_visits')
+          .maybeSingle();
+        if (data) setPageVisits(Number(data.count));
       }
     } catch (e) {
       console.error('Error recording visit:', e);
@@ -3366,6 +3364,25 @@ export default function App() {
   useEffect(() => {
     if (activeView === 'admin_dashboard' && currentUser?.role === 'admin') {
       fetchMetrics();
+      fetchProfiles();
+
+      // Suscripción en tiempo real para las métricas
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const channel = supabase
+        .channel('metrics_sync')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'app_metrics' 
+        }, () => {
+          fetchMetrics();
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [activeView, currentUser, fetchMetrics]);
 
@@ -4722,7 +4739,10 @@ export default function App() {
           </button>
           
           <button 
-            onClick={() => setActiveView('landing')}
+            onClick={() => {
+              if (currentUser?.role === 'admin') setActiveView('admin_dashboard');
+              else setActiveView('landing');
+            }}
             className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           >
             <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía Logo" className="h-full w-auto object-contain" />
