@@ -4120,28 +4120,48 @@ export default function App() {
             <nav className="flex-1 p-6 space-y-3 overflow-y-auto">
               <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">NAVEGACIÓN</div>
               
-              <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                 <Home className="w-5 h-5" /> <span>Página de Inicio</span>
-              </button>
-
-              <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                 <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
-              </button>
-
-              <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
-                 <Ticket className="w-5 h-5" /> <span>{currentRole === 'patrocinador' ? 'Mis Cupones' : 'Mi Cuponera'}</span>
-              </button>
-
-              {(currentUser?.role === 'admin' || currentUser?.role === 'patrocinador') && (
+              {currentRole === 'admin' ? (
                 <>
-                  {(currentUser?.role === 'patrocinador' || currentUser?.role === 'admin') && (
-                    <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
-                      <Sparkles className="w-5 h-5" /> <span>Generador</span>
-                    </button>
-                  )}
-                  <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
-                    <QrCode className="w-5 h-5" /> <span>Contador</span>
+                  <button onClick={() => setActiveView('admin_dashboard')} className={navItemClasses('admin_dashboard')}>
+                     <LayoutDashboard className="w-5 h-5" /> <span>Métricas</span>
                   </button>
+                  <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                  </button>
+                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                  </button>
+                  <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
+                     <Sparkles className="w-5 h-5" /> <span>Generador</span>
+                  </button>
+                  <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
+                     <QrCode className="w-5 h-5" /> <span>Contador</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                  </button>
+
+                  <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                  </button>
+
+                  <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
+                     <Ticket className="w-5 h-5" /> <span>{currentRole === 'patrocinador' ? 'Mis Cupones' : 'Mi Cuponera'}</span>
+                  </button>
+
+                  {(currentUser?.role === 'patrocinador') && (
+                    <>
+                      <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
+                        <Sparkles className="w-5 h-5" /> <span>Generador</span>
+                      </button>
+                      <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
+                        <QrCode className="w-5 h-5" /> <span>Contador</span>
+                      </button>
+                    </>
+                  )}
                 </>
               )}
 
@@ -4167,11 +4187,8 @@ export default function App() {
               {currentRole === 'admin' && (
                 <>
                   <div className="h-px bg-black/5 my-6 mx-2" />
-                  <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">ADMINISTRACIÓN</div>
+                  <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">SISTEMA</div>
                   
-                  <button onClick={() => setActiveView('admin_dashboard')} className={navItemClasses('admin_dashboard')}>
-                     <LayoutDashboard className="w-5 h-5" /> <span>Métricas Globales</span>
-                  </button>
                   <button onClick={() => setActiveView('admin_users')} className={navItemClasses('admin_users')}>
                      <User className="w-5 h-5" /> <span>Usuarios</span>
                   </button>
