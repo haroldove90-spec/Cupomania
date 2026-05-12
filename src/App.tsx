@@ -3243,11 +3243,14 @@ export default function App() {
   });
 
   const recordVisit = useCallback(async () => {
+    // Evitar duplicados en la misma sesión/pestaña
+    if (sessionStorage.getItem('cuponmania_visit_recorded')) return;
+
     try {
       const supabase = getSupabase();
       if (!supabase) return;
 
-      // Usamos el RPC para incremento atómico y evitar problemas de concurrencia
+      sessionStorage.setItem('cuponmania_visit_recorded', 'true');
       console.info('Intentando registrar visita vía RPC...');
       const { error } = await supabase.rpc('increment_page_visits');
       
