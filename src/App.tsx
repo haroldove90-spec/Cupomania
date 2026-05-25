@@ -5303,7 +5303,7 @@ export default function App() {
                      <Home className="w-5 h-5" /> <span>Página de Inicio</span>
                   </button>
                   <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
-                     <Sparkles className="w-5 h-5" /> <span>Generador</span>
+                     <Sparkles className="w-5 h-5" /> <span>Generador de cupones</span>
                   </button>
                   <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
                      <QrCode className="w-5 h-5" /> <span>Contador</span>
@@ -5332,7 +5332,7 @@ export default function App() {
                   {(currentUser?.role === 'patrocinador') && (
                     <>
                       <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
-                        <Sparkles className="w-5 h-5" /> <span>Generador</span>
+                        <Sparkles className="w-5 h-5" /> <span>Generador de cupones</span>
                       </button>
                       <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
                         <QrCode className="w-5 h-5" /> <span>Contador</span>
@@ -5676,9 +5676,47 @@ export default function App() {
         return (
           <div className="flex flex-col items-center justify-start relative w-full">
             <div className="w-full max-w-5xl flex flex-col items-center md:items-start md:flex-row gap-12 transform transition-transform duration-500 origin-top pt-4 pb-20">
-              <div className="w-full md:w-[450px] shrink-0">
+              <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-6">
                 <div className="bg-white rounded-[32px] shadow-xl overflow-hidden border border-black/5">
                   {renderGeneratorForm()}
+                </div>
+
+                {/* INSTRUCCIONES ESTILO PASO A PASO PARA EL PATROCINADOR */}
+                <div className="bg-white rounded-[32px] shadow-lg border border-black/5 p-8">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-secondary mb-5 flex items-center gap-2 border-b border-black/5 pb-3">
+                    <HelpCircle className="w-4 h-4 text-[#008F9A]" />
+                    Guía Rápida para Patrocinadores 🏪
+                  </h3>
+                  <ol className="space-y-4 text-xs font-medium text-neutral-600">
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-[#008F9A]/10 text-[#008F9A] font-black rounded-lg flex items-center justify-center text-[10px]">1</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-black block mb-0.5">Sube tu logo comercial:</strong>
+                        Selecciona una imagen clara de tu negocio. Se mostrará en la parte superior del cupón.
+                      </p>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-[#008F9A]/10 text-[#008F9A] font-black rounded-lg flex items-center justify-center text-[10px]">2</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-black block mb-0.5">Comenta los Detalles de la Oferta:</strong>
+                        Escribe el beneficio (ej. "2x1 en desayunos") y define las condiciones de uso (ej. "Válido lun-vie").
+                      </p>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-[#008F9A]/10 text-[#008F9A] font-black rounded-lg flex items-center justify-center text-[10px]">3</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-black block mb-0.5">Define la Vigencia:</strong>
+                        Especifica el número de horas disponibles para canjear antes de que expire la oferta.
+                      </p>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-[#008F9A]/10 text-[#008F9A] font-black rounded-lg flex items-center justify-center text-[10px]">4</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-black block mb-0.5">Previsualiza y Publica:</strong>
+                        Revisa el diseño generado en tiempo real en la pantalla y haz clic en "Publicar" para activarlo en la sección de Cupones.
+                      </p>
+                    </li>
+                  </ol>
                 </div>
               </div>
               
