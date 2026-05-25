@@ -1604,6 +1604,23 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
 }) => {
   const bgColor = config.data.diseno.color_primario || '#1a2a3a'; // Prefer a dark color if not provided
 
+  const offerText = config?.data?.oferta?.texto || 'OFERTA ESPECIAL';
+  
+  let fontStyleClass = "text-[72px] leading-[0.85]";
+  if (offerText.length > 60) {
+    fontStyleClass = "text-[26px] leading-[1.1]";
+  } else if (offerText.length > 45) {
+    fontStyleClass = "text-[32px] leading-[1.1]";
+  } else if (offerText.length > 30) {
+    fontStyleClass = "text-[40px] leading-[1.05]";
+  } else if (offerText.length > 20) {
+    fontStyleClass = "text-[52px] leading-[1.0]";
+  } else if (offerText.length > 12) {
+    fontStyleClass = "text-[64px] leading-[0.9]";
+  }
+
+  const gapClass = offerText.length > 45 ? 'gap-3' : 'gap-6';
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '---';
     try {
@@ -1652,9 +1669,9 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
           </div>
 
           {/* Right: Big Impact Offer (Secondary to Logo in layout hierarchy per request) */}
-          <div className="flex-1 flex flex-col items-center sm:items-end justify-center text-center sm:text-right gap-6">
-            <h2 className="text-[72px] font-black leading-[0.8] tracking-tighter uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white">
-              {config?.data?.oferta?.texto || 'OFERTA ESPECIAL'}
+          <div className={`flex-1 flex flex-col items-center sm:items-end justify-center text-center sm:text-right ${gapClass}`}>
+            <h2 className={`${fontStyleClass} font-black uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white tracking-tighter`}>
+              {offerText}
             </h2>
             <div className="mt-2 text-white">
               <Timer targetDate={config?.data?.cronometro?.timestamp_final || new Date(Date.now() + 86400000).toISOString()} />
