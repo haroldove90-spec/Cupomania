@@ -12,6 +12,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { 
   Ticket, 
   Sparkles, 
+  Megaphone,
   Clock, 
   RefreshCw, 
   Copy, 
@@ -50,6 +51,8 @@ import {
   Maximize2,
   ZoomIn,
   ZoomOut,
+  RotateCw,
+  Share2,
   Eye,
   EyeOff,
   Bell,
@@ -69,6 +72,7 @@ import {
 import { generateCoupon } from './services/geminiService';
 import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption } from './types';
 import { getSupabase } from './lib/supabase';
+import EnlaceIzcalliView from './components/EnlaceIzcalliView';
 
 // --- Helper Functions ---
 
@@ -2164,7 +2168,7 @@ const SponsorModal = ({ sponsor, isOpen, onClose }: { sponsor: UserProfile; isOp
   );
 };
 
-const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, onShowSponsor }: { 
+const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, onShowSponsor, showFeedback }: { 
   coupon: CuponConfig; 
   onSave: (id: string) => void; 
   onLike: (id: string) => void;
@@ -2172,19 +2176,80 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
   isLiked: boolean;
   sponsor?: UserProfile | null;
   onShowSponsor: (s: UserProfile) => void;
+  showFeedback?: (msg: string, type?: 'success' | 'error') => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.4);
 
-  // Lightbox Zoom and Pan states
+  // Lightbox Zoom, Pan and Rotation states
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
   const [initialPinchScale, setInitialPinchScale] = useState(1);
   const [lightboxBaseScale, setLightboxBaseScale] = useState(1);
+
+  const handleShare = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const shareText = `¡Mira este súper cupón de ${coupon.data.header.nombre_negocio} - "${coupon.data.oferta.texto}" en Cuponmanía!`;
+    const shareTitle = `Cupón de ${coupon.data.header.nombre_negocio}`;
+    
+    if (navigator.share) {
+      try {
+        if (coupon.imageData) {
+          try {
+            // Convert base64 data to blob and then to File
+            const res = await fetch(coupon.imageData);
+            const blob = await res.blob();
+            const file = new File([blob], `cupon-${coupon.data.header.nombre_negocio.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: shareTitle,
+                text: shareText
+              });
+              if (showFeedback) showFeedback('¡Acción de compartir abierta!');
+              return;
+            }
+          } catch (fileErr) {
+            console.error('Error in file sharing process:', fileErr);
+          }
+        }
+        
+        // Fallback share with text/link
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: window.location.href
+        });
+        if (showFeedback) showFeedback('¡Acción de compartir abierta!');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+          copyToClipboard();
+        }
+      }
+    } else {
+      copyToClipboard();
+    }
+  };
+
+  const copyToClipboard = () => {
+    const text = `¡Descubre este cupón de ${coupon.data.header.nombre_negocio} en Cuponmanía! Oferta: ${coupon.data.oferta.texto} - Sigue este enlace para más novedades: ${window.location.href}`;
+    navigator.clipboard.writeText(text).then(() => {
+      if (showFeedback) {
+        showFeedback('¡Copiado al portapapeles para compartir!');
+      } else {
+        alert('Copiado al portapapeles. ¡Compártelo con tus amigos!');
+      }
+    }).catch(err => {
+      console.error('Error copying:', err);
+    });
+  };
 
   useEffect(() => {
     const updateScale = () => {
@@ -2295,6 +2360,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
   const handleReset = () => {
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
+    setRotation(0);
   };
 
   return (
@@ -2381,7 +2447,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
             >
               <div 
                 style={{ 
-                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${lightboxBaseScale * zoomScale})`,
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${lightboxBaseScale * zoomScale}) rotate(${rotation}deg)`,
                   transformOrigin: 'center center'
                 }}
                 className="transition-transform duration-75 select-none pointer-events-none force-no-responsive"
@@ -2399,12 +2465,12 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
             </div>
 
             {/* Controls panel */}
-            <div className="w-full flex flex-col items-center gap-4 z-[1010] max-w-lg mb-4">
+            <div className="w-full flex flex-col items-center gap-4 z-[1010] max-w-xl mb-4">
               <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest text-center">
                 Pellizca con 2 dedos • Rueda del mouse • Arrastra para explorar
               </p>
               
-              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-6 shadow-xl w-fit">
+              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-4 md:gap-5 shadow-xl w-fit">
                 <button 
                   onClick={() => setZoomScale(s => Math.max(0.5, s / 1.25))}
                   className="text-white hover:text-primary transition-colors p-2 cursor-pointer active:scale-95"
@@ -2412,21 +2478,45 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
                 >
                   <ZoomOut className="w-5 h-5" />
                 </button>
-                <div className="w-[1px] h-4 bg-white/20" />
-                <button 
-                  onClick={handleReset}
-                  className="text-white hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest px-4 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/5 cursor-pointer active:scale-95"
-                  title="Restablecer"
-                >
-                  Restablecer
-                </button>
-                <div className="w-[1px] h-4 bg-white/20" />
+                
                 <button 
                   onClick={() => setZoomScale(s => Math.min(4, s * 1.25))}
                   className="text-white hover:text-primary transition-colors p-2 cursor-pointer active:scale-95"
                   title="Acercar"
                 >
                   <ZoomIn className="w-5 h-5" />
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => setRotation(r => (r + 90) % 360)}
+                  className="text-white hover:text-primary transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Girar 90°"
+                >
+                  <RotateCw className="w-5 h-5" />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Girar 90°</span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => handleShare()}
+                  className="text-white hover:text-primary transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Compartir"
+                >
+                  <Share2 className="w-5 h-5 text-primary animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline text-primary">Compartir</span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={handleReset}
+                  className="text-white hover:text-primary transition-colors text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/5 cursor-pointer active:scale-95"
+                  title="Restablecer"
+                >
+                  Reset
                 </button>
               </div>
             </div>
@@ -2449,6 +2539,14 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
           >
             <Save className={`w-5 h-5 ${isSaved ? 'fill-current text-primary' : ''}`} />
           </button>
+
+          <button 
+            onClick={handleShare}
+            className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border border-black/5 bg-white hover:bg-gray-50 text-black/60 shadow-sm"
+            title="Compartir cupón"
+          >
+            <Share2 className="w-5 h-5 text-amber-500" />
+          </button>
         </div>
 
         {sponsor && (
@@ -2466,7 +2564,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
 });
 
 
-const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading, isAdmin, onDelete }: { 
+const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading, isAdmin, onDelete, showFeedback }: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -2479,6 +2577,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   isLoading?: boolean;
   isAdmin?: boolean;
   onDelete?: (id: string) => void;
+  showFeedback?: (msg: string, type?: 'success' | 'error') => void;
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
@@ -2589,6 +2688,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
                 isLiked={likedIds.includes(coupon.id)}
                 sponsor={users.find(u => u.id === coupon.creatorId)}
                 onShowSponsor={onShowSponsor}
+                showFeedback={showFeedback}
               />
             </div>
           ))}
@@ -2599,7 +2699,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   );
 };
 
-const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShowSponsor, isLoading }: { 
+const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShowSponsor, isLoading, showFeedback }: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -2608,6 +2708,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
   users: UserProfile[];
   onShowSponsor: (sponsor: UserProfile) => void;
   isLoading: boolean;
+  showFeedback?: (msg: string, type?: 'success' | 'error') => void;
 }) => {
   const now = new Date();
   const savedCoupons = coupons.filter(c => savedIds.includes(c.id));
@@ -2642,6 +2743,7 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
               isLiked={likedIds.includes(coupon.id)}
               sponsor={users.find(u => u.id === coupon.creatorId)}
               onShowSponsor={onShowSponsor}
+              showFeedback={showFeedback}
             />
           ))}
         </div>
@@ -4434,6 +4536,9 @@ export default function App() {
                   <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                      <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
                   </button>
+                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
                      <Home className="w-5 h-5" /> <span>Página de Inicio</span>
                   </button>
@@ -4452,6 +4557,10 @@ export default function App() {
 
                   <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                      <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                  </button>
+
+                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
 
                   <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
@@ -4699,7 +4808,7 @@ export default function App() {
       case 'marketplace': 
         return (
           <div className="relative w-full h-full min-h-[calc(100vh-80px)]">
-            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />
+            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} showFeedback={showFeedback} />
             
             {!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador' && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
@@ -4766,7 +4875,7 @@ export default function App() {
         }
         return currentUser?.role === 'patrocinador' 
           ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} onDelete={handleDeleteCoupon} /> 
-          : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingSaved || isFetchingCoupons} />;
+          : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingSaved || isFetchingCoupons} showFeedback={showFeedback} />;
       case 'profile': 
         return currentUser ? (
           <ProfileView user={currentUser} onUpdate={(updated) => {
@@ -4914,12 +5023,14 @@ export default function App() {
         return <AdminFlyerView initialLinks={flyerLinks} onUpdate={updateFlyerSettings} />;
       case 'admin_notifications':
         return <AdminNotificationCenter showFeedback={showFeedback} />;
+      case 'enlace_izcalli':
+        return <EnlaceIzcalliView currentUser={currentUser} showFeedback={showFeedback} />;
       case 'privacy':
         return <PrivacyPolicy onBack={() => setActiveView('landing')} />;
     }
   };
 
-  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace') {
+  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'enlace_izcalli') {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}
@@ -5195,6 +5306,10 @@ export default function App() {
             <span className="text-[7px] font-black uppercase">Crear</span>
           </button>
         )}
+        <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
+          <Megaphone className="w-5 h-5" />
+          <span className="text-[7px] font-black uppercase">Izcalli</span>
+        </button>
         {/* Seccion Cuponmanía oculta */}
         <button onClick={() => setActiveView('notifications')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'notifications' ? 'text-white scale-110' : 'text-white/40'}`}>
           <div className="relative">

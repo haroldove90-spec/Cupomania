@@ -4,7 +4,7 @@
  */
 
 export type UserRole = 'admin' | 'patrocinador' | 'usuario';
-export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter' | 'privacy';
+export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter' | 'privacy' | 'enlace_izcalli';
 
 export interface CouponRedemption {
   id: string;
@@ -115,3 +115,14 @@ export interface BusinessData {
   logo_data?: string;
   website?: string;
 }
+
+export interface IzcalliFlyer {
+  id: string;
+  title: string;
+  imageUrl: string;
+  category: string;
+  creatorId: string;
+  creatorName: string;
+  createdAt: string;
+}
+
