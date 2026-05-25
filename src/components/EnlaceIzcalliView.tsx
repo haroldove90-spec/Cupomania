@@ -14,7 +14,9 @@ import {
   Calendar,
   Grid,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Heart,
+  Bookmark
 } from 'lucide-react';
 import { getSupabase } from '../lib/supabase';
 import { UserProfile, IzcalliFlyer } from '../types';
@@ -22,11 +24,22 @@ import { UserProfile, IzcalliFlyer } from '../types';
 interface EnlaceIzcalliViewProps {
   currentUser: UserProfile | null;
   showFeedback: (msg: string, type?: 'success' | 'error') => void;
+  savedFlyerIds: string[];
+  likedFlyerIds: string[];
+  onToggleSaveFlyer: (flyerId: string) => void;
+  onToggleLikeFlyer: (flyerId: string) => void;
 }
 
 const DEFAULT_CATEGORIES = ['Comida', 'Servicios', 'Entretenimiento', 'Deportes', 'Educación', 'Salud', 'Hogar', 'Moda'];
 
-export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceIzcalliViewProps) {
+export default function EnlaceIzcalliView({ 
+  currentUser, 
+  showFeedback,
+  savedFlyerIds = [],
+  likedFlyerIds = [],
+  onToggleSaveFlyer,
+  onToggleLikeFlyer
+}: EnlaceIzcalliViewProps) {
   // Navigation states
   const [activeTab, setActiveTab] = useState<'gallery' | 'manage'>('gallery');
   
@@ -174,16 +187,52 @@ export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceI
     }
   };
 
-  // Convert uploaded image file to base64
+  // Convert uploaded image file to base64 with canvas-based compression
   const processFile = (file: File) => {
-    if (file.size > 8 * 1024 * 1024) {
-      showFeedback('La imagen es demasiado grande. Máximo 8MB permitido.', 'error');
+    if (file.size > 20 * 1024 * 1024) { // Increase absolute limit to 20MB but compress to ~150KB
+      showFeedback('La imagen es demasiado grande. Máximo 20MB permitido.', 'error');
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setFlyerImageData(reader.result as string);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Create canvas to scale down if dimensions are large, preventing huge base64 strings
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1100; // Optimal constraint for sharp display and low memory footprint
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Draw image to canvas
+          ctx.drawImage(img, 0, 0, width, height);
+          // Compress with quality 0.75 to save massive amounts of network & disk resources
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          setFlyerImageData(compressedBase64);
+        } else {
+          setFlyerImageData(event.target?.result as string);
+        }
+      };
+      img.onerror = () => {
+        setFlyerImageData(event.target?.result as string);
+      };
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -238,7 +287,20 @@ export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceI
     // Save locally first for robust fallback
     const updatedFlyers = [newFlyer, ...flyers];
     setFlyers(updatedFlyers);
-    localStorage.setItem('izcalli_flyers_local', JSON.stringify(updatedFlyers));
+    
+    // Catch StorageQuotaExceeded and slice old items if necessary
+    try {
+      localStorage.setItem('izcalli_flyers_local', JSON.stringify(updatedFlyers));
+    } catch (err) {
+      console.warn('LocalStorage quota limit reached, saving with sliced history fallback...', err);
+      try {
+        // Keep only top 10 recent flyers locally to free up space
+        const limited = updatedFlyers.slice(0, 10);
+        localStorage.setItem('izcalli_flyers_local', JSON.stringify(limited));
+      } catch (innerErr) {
+        console.error('Failed to write even limited local flyers:', innerErr);
+      }
+    }
 
     let dbSucceeded = false;
     try {
@@ -581,7 +643,37 @@ export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceI
                         </span>
                       </div>
 
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleLikeFlyer(flyer.id);
+                          }}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            likedFlyerIds.includes(flyer.id) 
+                              ? 'bg-red-50 text-red-500' 
+                              : 'hover:bg-neutral-100 text-gray-400 hover:text-red-500'
+                          }`}
+                          title="Me gusta"
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${likedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleSaveFlyer(flyer.id);
+                          }}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            savedFlyerIds.includes(flyer.id) 
+                              ? 'bg-teal-50 text-teal-600' 
+                              : 'hover:bg-neutral-100 text-gray-400 hover:text-teal-600'
+                          }`}
+                          title="Guardar en Cuponera"
+                        >
+                          <Bookmark className={`w-3.5 h-3.5 ${savedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
+                        </button>
+
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -884,12 +976,31 @@ export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceI
                 <div className="w-[1px] h-4 bg-white/20" />
 
                 <button 
-                  onClick={() => setRotation(r => (r + 90) % 360)}
-                  className="text-white hover:text-emerald-400 transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
-                  title="Girar 90°"
+                  onClick={() => onToggleLikeFlyer(activeLightboxFlyer.id)}
+                  className={`transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    likedFlyerIds.includes(activeLightboxFlyer.id) ? 'text-red-500' : 'text-white hover:text-red-500'
+                  }`}
+                  title="Me gusta"
                 >
-                  <RotateCw className="w-5 h-5" />
-                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Girar 90°</span>
+                  <Heart className={`w-5 h-5 ${likedFlyerIds.includes(activeLightboxFlyer.id) ? 'fill-current' : ''}`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">
+                    {likedFlyerIds.includes(activeLightboxFlyer.id) ? 'Te Gusta' : 'Me Gusta'}
+                  </span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => onToggleSaveFlyer(activeLightboxFlyer.id)}
+                  className={`transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    savedFlyerIds.includes(activeLightboxFlyer.id) ? 'text-teal-400' : 'text-white hover:text-teal-400'
+                  }`}
+                  title="Guardar"
+                >
+                  <Bookmark className={`w-5 h-5 ${savedFlyerIds.includes(activeLightboxFlyer.id) ? 'fill-current' : ''}`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">
+                    {savedFlyerIds.includes(activeLightboxFlyer.id) ? 'Guardado' : 'Guardar'}
+                  </span>
                 </button>
 
                 <div className="w-[1px] h-4 bg-white/20" />
@@ -899,7 +1010,7 @@ export default function EnlaceIzcalliView({ currentUser, showFeedback }: EnlaceI
                   className="text-emerald-400 hover:text-emerald-300 transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
                   title="Compartir"
                 >
-                  <Share2 className="w-5 h-5 text-emerald-400 animate-pulse" />
+                  <Share2 className="w-5 h-5 text-emerald-400" />
                   <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Compartir</span>
                 </button>
 

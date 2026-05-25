@@ -67,10 +67,11 @@ import {
   Navigation,
   Phone,
   Home,
-  Globe
+  Globe,
+  Bookmark
 } from 'lucide-react';
 import { generateCoupon } from './services/geminiService';
-import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption } from './types';
+import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption, IzcalliFlyer } from './types';
 import { getSupabase } from './lib/supabase';
 import EnlaceIzcalliView from './components/EnlaceIzcalliView';
 
@@ -2699,7 +2700,21 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   );
 };
 
-const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShowSponsor, isLoading, showFeedback }: { 
+const WalletView = ({ 
+  coupons, 
+  savedIds, 
+  likedIds, 
+  onSave, 
+  onLike, 
+  users, 
+  onShowSponsor, 
+  isLoading, 
+  showFeedback,
+  savedFlyerIds = [],
+  likedFlyerIds = [],
+  onToggleSaveFlyer,
+  onToggleLikeFlyer
+}: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -2709,45 +2724,474 @@ const WalletView = ({ coupons, savedIds, likedIds, onSave, onLike, users, onShow
   onShowSponsor: (sponsor: UserProfile) => void;
   isLoading: boolean;
   showFeedback?: (msg: string, type?: 'success' | 'error') => void;
+  savedFlyerIds?: string[];
+  likedFlyerIds?: string[];
+  onToggleSaveFlyer?: (id: string) => void;
+  onToggleLikeFlyer?: (id: string) => void;
 }) => {
-  const now = new Date();
+  const [activeTab, setActiveTab] = useState<'coupons' | 'flyers'>('coupons');
+  const [flyers, setFlyers] = useState<IzcalliFlyer[]>([]);
+  const [isFetchingFlyers, setIsFetchingFlyers] = useState(false);
+
+  // Lightbox view states for deep zoom, pan, and rotate
+  const [activeLightboxFlyer, setActiveLightboxFlyer] = useState<IzcalliFlyer | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [lightboxBaseScale, setLightboxBaseScale] = useState(1);
+
+  useEffect(() => {
+    const loadFlyers = async () => {
+      setIsFetchingFlyers(true);
+      let loadedFlyers: IzcalliFlyer[] = [];
+      try {
+        const supabase = getSupabase();
+        if (supabase) {
+          const { data: dbFlyers, error } = await supabase
+            .from('izcalli_flyers')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (!error && dbFlyers) {
+            loadedFlyers = dbFlyers.map(f => ({
+              id: f.id,
+              title: f.title || '',
+              imageUrl: f.image_url,
+              category: f.category_name,
+              creatorId: f.creator_id,
+              creatorName: f.creator_name || 'Anónimo',
+              createdAt: f.created_at
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase read error inside WalletView:', err);
+      }
+
+      const localFlyersStr = localStorage.getItem('izcalli_flyers_local');
+      if (localFlyersStr) {
+        try {
+          const locals = JSON.parse(localFlyersStr);
+          // Merge
+          const existingIds = new Set(loadedFlyers.map(f => f.id));
+          locals.forEach((lf: IzcalliFlyer) => {
+            if (!existingIds.has(lf.id)) {
+              loadedFlyers.push(lf);
+            }
+          });
+        } catch (_) {}
+      }
+      setFlyers(loadedFlyers);
+      setIsFetchingFlyers(false);
+    };
+
+    loadFlyers();
+  }, [savedFlyerIds]);
+
+  // Update dynamic base scale for lightbox on screen resize
+  useEffect(() => {
+    if (!activeLightboxFlyer) return;
+    const calculateBaseScale = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const calculated = Math.min((w - 48) / 800, (h - 220) / 600);
+      setLightboxBaseScale(Math.min(1.2, Math.max(0.3, calculated)));
+    };
+    calculateBaseScale();
+    window.addEventListener('resize', calculateBaseScale);
+    return () => window.removeEventListener('resize', calculateBaseScale);
+  }, [activeLightboxFlyer]);
+
   const savedCoupons = coupons.filter(c => savedIds.includes(c.id));
+  const savedFlyers = flyers.filter(f => savedFlyerIds.includes(f.id));
+
+  const handleShareFlyer = async (flyer: IzcalliFlyer, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const shareText = `¡Mira este flyer publicitario de "${flyer.title}" en Enlace Izcalli!`;
+    const shareTitle = flyer.title;
+
+    if (navigator.share) {
+      try {
+        if (flyer.imageUrl.startsWith('data:image')) {
+          const res = await fetch(flyer.imageUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `flyer-${flyer.title.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: shareTitle,
+              text: shareText
+            });
+            return;
+          }
+        }
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: window.location.href
+        });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          copyToClipboard(flyer);
+        }
+      }
+    } else {
+      copyToClipboard(flyer);
+    }
+  };
+
+  const copyToClipboard = (flyer: IzcalliFlyer) => {
+    const text = `¡Descubre este flyer en Enlace Izcalli! Título: ${flyer.title}. Organizado por: ${flyer.creatorName}. Sigue este enlace: ${window.location.href}`;
+    navigator.clipboard.writeText(text).then(() => {
+      if (showFeedback) showFeedback('¡Enlace de flyer copiado al portapapeles!');
+    }).catch(() => {
+      if (showFeedback) showFeedback('No se pudo copiar el enlace', 'error');
+    });
+  };
+
+  // Lightbox handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setPanOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    const delta = e.deltaY;
+    const factor = delta < 0 ? 1.15 : 0.85;
+    const newScale = Math.min(4, Math.max(0.5, zoomScale * factor));
+    setZoomScale(newScale);
+  };
+
+  const handleReset = () => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    setRotation(0);
+  };
 
   return (
-    <div className="w-full h-full p-6 md:p-12 overflow-x-hidden">
-      <div className="mb-8 md:mb-12">
-        <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Mi Cuponera</h2>
-        <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Tus beneficios guardados</p>
+    <div className="w-full h-full p-6 md:p-12 overflow-x-hidden relative">
+      <div className="mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Mi Cuponera</h2>
+          <p className="text-[10px] md:text-sm text-black/40 uppercase font-bold tracking-widest">Tus beneficios y flyers guardados</p>
+        </div>
+
+        {/* Navigation Tabs inside WalletView */}
+        <div className="flex bg-black/5 p-1 rounded-2xl shrink-0 self-start md:self-auto select-none">
+          <button
+            onClick={() => setActiveTab('coupons')}
+            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+              activeTab === 'coupons' 
+                ? 'bg-white text-black shadow-sm' 
+                : 'text-black/40 hover:text-black'
+            }`}
+          >
+            Cupones ({savedCoupons.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('flyers')}
+            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+              activeTab === 'flyers'
+                ? 'bg-white text-black shadow-sm' 
+                : 'text-black/40 hover:text-black'
+            }`}
+          >
+            Digital Flyers ({savedFlyers.length})
+          </button>
+        </div>
       </div>
 
-      {isLoading && savedCoupons.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 animate-pulse">
-           {[1,2,3,4].map(i => (
-             <div key={i} className="bg-black/5 rounded-3xl h-[400px]" />
-           ))}
-        </div>
-      ) : savedCoupons.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-black/20">
-          <Heart className="w-16 h-16 mb-4" />
-          <p className="font-bold uppercase tracking-widest">Tu cuponera está vacía</p>
-        </div>
+      {activeTab === 'coupons' ? (
+        <>
+          {isLoading && savedCoupons.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 animate-pulse">
+               {[1,2,3,4].map(i => (
+                 <div key={i} className="bg-black/5 rounded-3xl h-[400px]" />
+               ))}
+            </div>
+          ) : savedCoupons.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-black/20">
+              <Heart className="w-16 h-16 mb-4" />
+              <p className="font-bold uppercase tracking-widest text-center">Tu cuponera está vacía</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/30 mt-2">Visita la sección Cuponmanía para guardar cupones</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+              {savedCoupons.map(coupon => (
+                <CouponCard 
+                  key={coupon.id} 
+                  coupon={coupon} 
+                  onSave={onSave} 
+                  onLike={onLike}
+                  isSaved={true} 
+                  isLiked={likedIds.includes(coupon.id)}
+                  sponsor={users.find(u => u.id === coupon.creatorId)}
+                  onShowSponsor={onShowSponsor}
+                  showFeedback={showFeedback}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-          {savedCoupons.map(coupon => (
-            <CouponCard 
-              key={coupon.id} 
-              coupon={coupon} 
-              onSave={onSave} 
-              onLike={onLike}
-              isSaved={true} 
-              isLiked={likedIds.includes(coupon.id)}
-              sponsor={users.find(u => u.id === coupon.creatorId)}
-              onShowSponsor={onShowSponsor}
-              showFeedback={showFeedback}
-            />
-          ))}
-        </div>
+        <>
+          {isFetchingFlyers && savedFlyers.length === 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 animate-pulse">
+               {[1,2,3,4].map(i => (
+                 <div key={i} className="bg-black/5 rounded-3xl aspect-[4/5]" />
+               ))}
+            </div>
+          ) : savedFlyers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-black/20">
+              <Bookmark className="w-16 h-16 mb-4" />
+              <p className="font-bold uppercase tracking-widest text-center">No tienes flyers guardados</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/30 mt-2">Visita Enlace Izcalli para guardar tus flyers favoritos</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {savedFlyers.map(flyer => (
+                <motion.div
+                  key={flyer.id}
+                  onClick={() => {
+                    setActiveLightboxFlyer(flyer);
+                    setZoomScale(1);
+                    setPanOffset({ x: 0, y: 0 });
+                    setRotation(0);
+                  }}
+                  className="group relative bg-white border border-black/5 rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-zoom-in flex flex-col h-full overflow-hidden"
+                >
+                  <div className="p-3 pb-1 flex items-center justify-between border-b border-black/5 bg-gray-50 text-[8px] font-black uppercase tracking-widest text-black/40 truncate select-none">
+                    <span className="flex items-center gap-1 shrink-0 bg-white border border-black/5 px-2 py-0.5 rounded-full text-[7px] text-teal-600">
+                      {flyer.category}
+                    </span>
+                    <span className="truncate max-w-[50%]">{flyer.creatorName}</span>
+                  </div>
+
+                  <div className="flex-1 overflow-hidden aspect-[4/5] bg-neutral-950 relative">
+                    <img 
+                      src={flyer.imageUrl} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      loading="lazy"
+                      alt={flyer.title}
+                    />
+                    
+                    <div className="absolute inset-0 bg-teal-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white z-10">
+                      <ZoomIn className="w-6 h-6 animate-pulse" />
+                      <span className="text-[8px] font-black uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-md">
+                        Ver Mas Grande
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white flex items-center justify-between gap-2 border-t border-black/5 shrink-0">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-[10px] font-black uppercase tracking-tight text-gray-800 truncate leading-none">
+                        {flyer.title}
+                      </h4>
+                      <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-1 leading-none">
+                        {new Date(flyer.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1 items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onToggleLikeFlyer) onToggleLikeFlyer(flyer.id);
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          likedFlyerIds.includes(flyer.id) 
+                            ? 'bg-red-50 text-red-500' 
+                            : 'hover:bg-neutral-100 text-gray-400 hover:text-red-500'
+                        }`}
+                        title="Me gusta"
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${likedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onToggleSaveFlyer) onToggleSaveFlyer(flyer.id);
+                        }}
+                        className="p-1.5 bg-teal-50 text-teal-600 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
+                        title="Remover de la Cuponera"
+                      >
+                        <Bookmark className="w-3.5 h-3.5 fill-current" />
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareFlyer(flyer, e);
+                        }}
+                        className="p-1.5 hover:bg-neutral-100 rounded-lg text-gray-500 hover:text-teal-600 transition-colors"
+                        title="Compartir"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
       )}
+
+      {/* LIGHTBOX FOR SAVED FLYERS INSIDE WALLET */}
+      <AnimatePresence>
+        {activeLightboxFlyer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex flex-col justify-between items-center p-4 md:p-8 select-none"
+            onWheel={handleWheel}
+          >
+            <div className="w-full flex justify-between items-center z-[1010] max-w-6xl mt-2 select-none">
+              <div className="flex flex-col text-left">
+                <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest bg-emerald-400/15 px-3 py-1.5 rounded-full border border-emerald-400/20 w-fit">
+                  {activeLightboxFlyer.category}
+                </span>
+                <span className="text-white text-xl md:text-2xl font-black uppercase tracking-tight mt-2 leading-none text-left">
+                  {activeLightboxFlyer.title}
+                </span>
+                <span className="text-white/40 text-[9px] font-bold uppercase tracking-widest mt-1 text-left">
+                  Publicado por: {activeLightboxFlyer.creatorName}
+                </span>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setActiveLightboxFlyer(null);
+                  handleReset();
+                }}
+                className="p-3 bg-white/10 hover:bg-white/20 select-none text-white rounded-full transition-all cursor-pointer border border-white/5 active:scale-95 z-50 hover:rotate-90 duration-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div 
+              className="flex-1 w-full flex items-center justify-center overflow-hidden touch-none relative cursor-grab active:cursor-grabbing"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <div 
+                style={{ 
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${lightboxBaseScale * zoomScale}) rotate(${rotation}deg)`,
+                  transformOrigin: 'center center'
+                }}
+                className="transition-transform duration-75 select-none pointer-events-none"
+              >
+                <img 
+                  src={activeLightboxFlyer.imageUrl} 
+                  className="w-[1000px] h-[580px] object-contain rounded-[24px] shadow-2xl bg-neutral-900" 
+                  alt={activeLightboxFlyer.title}
+                />
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col items-center gap-4 z-[1010] max-w-xl mb-4">
+              <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest text-center">
+                Pellizca con 2 dedos • Rueda del mouse • Arrastra para explorar
+              </p>
+              
+              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-4 md:gap-5 shadow-xl w-fit">
+                <button 
+                  onClick={() => setZoomScale(s => Math.max(0.5, s / 1.25))}
+                  className="text-white hover:text-emerald-400 transition-colors p-2 cursor-pointer active:scale-95"
+                  title="Alejar"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+                
+                <button 
+                  onClick={() => setZoomScale(s => Math.min(4, s * 1.25))}
+                  className="text-white hover:text-emerald-400 transition-colors p-2 cursor-pointer active:scale-95"
+                  title="Acercar"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => {
+                    if (onToggleLikeFlyer) onToggleLikeFlyer(activeLightboxFlyer.id);
+                  }}
+                  className={`transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    likedFlyerIds.includes(activeLightboxFlyer.id) ? 'text-red-500' : 'text-white hover:text-red-500'
+                  }`}
+                  title="Me gusta"
+                >
+                  <Heart className={`w-5 h-5 ${likedFlyerIds.includes(activeLightboxFlyer.id) ? 'fill-current' : ''}`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">
+                    {likedFlyerIds.includes(activeLightboxFlyer.id) ? 'Te Gusta' : 'Me Gusta'}
+                  </span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => {
+                    if (onToggleSaveFlyer) onToggleSaveFlyer(activeLightboxFlyer.id);
+                  }}
+                  className={`transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    savedFlyerIds.includes(activeLightboxFlyer.id) ? 'text-teal-400' : 'text-white hover:text-teal-400'
+                  }`}
+                  title="Remover"
+                >
+                  <Bookmark className={`w-5 h-5 ${savedFlyerIds.includes(activeLightboxFlyer.id) ? 'fill-current' : ''}`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">
+                    {savedFlyerIds.includes(activeLightboxFlyer.id) ? 'Guardado' : 'Guardar'}
+                  </span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={() => handleShareFlyer(activeLightboxFlyer)}
+                  className="text-emerald-400 hover:text-emerald-300 transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Compartir"
+                >
+                  <Share2 className="w-5 h-5 text-emerald-400" />
+                  <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Compartir</span>
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/20" />
+
+                <button 
+                  onClick={handleReset}
+                  className="text-white hover:text-emerald-400 transition-colors text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/5 cursor-pointer active:scale-95"
+                  title="Restablecer"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -3355,6 +3799,7 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('cuponmania_user');
+    localStorage.removeItem('cuponmania_view');
     setActiveView('landing');
     resetAllForms(null);
     showFeedback('Sesión cerrada correctamente');
@@ -3610,11 +4055,18 @@ export default function App() {
     return (localStorage.getItem('cuponmania_role') as UserRole) || 'usuario';
   });
   const [activeView, setActiveView] = useState<AppView>(() => {
+    const savedView = localStorage.getItem('cuponmania_view') as AppView;
+    if (savedView) return savedView;
+
     const savedRole = localStorage.getItem('cuponmania_role') as UserRole;
     if (savedRole === 'admin') return 'admin_dashboard';
     if (savedRole === 'patrocinador') return 'generator';
     return 'landing';
   });
+
+  useEffect(() => {
+    localStorage.setItem('cuponmania_view', activeView);
+  }, [activeView]);
 
   const [authConfig, setAuthConfig] = useState({
     initialRole: 'usuario' as UserRole,
@@ -3718,6 +4170,24 @@ export default function App() {
   const [likedIds, setLikedIds] = useState<string[]>(() => {
     const stored = localStorage.getItem('cuponmania_liked');
     return stored ? JSON.parse(stored) : [];
+  });
+
+  const [savedFlyerIds, setSavedFlyerIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('izcalli_saved_flyers');
+      return stored ? JSON.parse(stored) : [];
+    } catch (_) {
+      return [];
+    }
+  });
+
+  const [likedFlyerIds, setLikedFlyerIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('izcalli_liked_flyers');
+      return stored ? JSON.parse(stored) : [];
+    } catch (_) {
+      return [];
+    }
   });
 
   const [isRegisteringBusiness, setIsRegisteringBusiness] = useState(false);
@@ -4118,6 +4588,95 @@ export default function App() {
       showFeedback(`No se pudo guardar: ${error.message || 'Error de conexión'}`, 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleSaveFlyer = async (flyerId: string) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      showFeedback('Por favor, inicia sesión para guardar flyers en tu cuponera', 'error');
+      return;
+    }
+
+    const isSaved = savedFlyerIds.includes(flyerId);
+    let updated: string[];
+    if (isSaved) {
+      updated = savedFlyerIds.filter(id => id !== flyerId);
+      showFeedback('Flyer removido de tu cuponera');
+    } else {
+      updated = [...savedFlyerIds, flyerId];
+      showFeedback('¡Flyer guardado en tu cuponera con éxito!', 'success');
+    }
+    setSavedFlyerIds(updated);
+    localStorage.setItem('izcalli_saved_flyers', JSON.stringify(updated));
+
+    try {
+      const supabase = getSupabase();
+      if (supabase) {
+        let userId = currentUser.id;
+        if (!userId.includes('-')) {
+          const synced = await upsertProfile(currentUser);
+          if (synced && synced.id.includes('-')) {
+            userId = synced.id;
+          }
+        }
+        if (isSaved) {
+          await supabase
+            .from('izcalli_saved_flyers')
+            .delete()
+            .match({ user_id: userId, flyer_id: flyerId });
+        } else {
+          await supabase
+            .from('izcalli_saved_flyers')
+            .insert([{ user_id: userId, flyer_id: flyerId }]);
+        }
+      }
+    } catch (err) {
+      console.warn('Silent database write error for saved flyer:', err);
+    }
+  };
+
+  const handleToggleLikeFlyer = async (flyerId: string) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      showFeedback('Por favor, inicia sesión para dar Me gusta a los flyers', 'error');
+      return;
+    }
+
+    const isLiked = likedFlyerIds.includes(flyerId);
+    let updated: string[];
+    if (isLiked) {
+      updated = likedFlyerIds.filter(id => id !== flyerId);
+    } else {
+      updated = [...likedFlyerIds, flyerId];
+      showFeedback('¡Te gusta este flyer!');
+    }
+    setLikedFlyerIds(updated);
+    localStorage.setItem('izcalli_liked_flyers', JSON.stringify(updated));
+
+    try {
+      const supabase = getSupabase();
+      if (supabase) {
+        let userId = currentUser.id;
+        if (!userId.includes('-')) {
+          const synced = await upsertProfile(currentUser);
+          if (synced && synced.id.includes('-')) {
+            userId = synced.id;
+          }
+        }
+        if (isLiked) {
+          await supabase
+            .from('izcalli_liked_flyers')
+            .delete()
+            .match({ user_id: userId, flyer_id: flyerId });
+        } else {
+          await supabase
+            .from('izcalli_liked_flyers')
+            .insert([{ user_id: userId, flyer_id: flyerId }]);
+        }
+      }
+    } catch (err) {
+      console.warn('Silent database write error for liked flyer:', err);
     }
   };
 
@@ -4875,7 +5434,21 @@ export default function App() {
         }
         return currentUser?.role === 'patrocinador' 
           ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} onDelete={handleDeleteCoupon} /> 
-          : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingSaved || isFetchingCoupons} showFeedback={showFeedback} />;
+          : <WalletView 
+              coupons={activeCoupons} 
+              savedIds={savedIds} 
+              likedIds={likedIds} 
+              onSave={handleSaveCoupon} 
+              onLike={handleLikeCoupon} 
+              users={users} 
+              onShowSponsor={(s) => setViewingSponsor(s)} 
+              isLoading={isFetchingSaved || isFetchingCoupons} 
+              showFeedback={showFeedback}
+              savedFlyerIds={savedFlyerIds}
+              likedFlyerIds={likedFlyerIds}
+              onToggleSaveFlyer={handleToggleSaveFlyer}
+              onToggleLikeFlyer={handleToggleLikeFlyer}
+            />;
       case 'profile': 
         return currentUser ? (
           <ProfileView user={currentUser} onUpdate={(updated) => {
@@ -5024,7 +5597,16 @@ export default function App() {
       case 'admin_notifications':
         return <AdminNotificationCenter showFeedback={showFeedback} />;
       case 'enlace_izcalli':
-        return <EnlaceIzcalliView currentUser={currentUser} showFeedback={showFeedback} />;
+        return (
+          <EnlaceIzcalliView 
+            currentUser={currentUser} 
+            showFeedback={showFeedback} 
+            savedFlyerIds={savedFlyerIds}
+            likedFlyerIds={likedFlyerIds}
+            onToggleSaveFlyer={handleToggleSaveFlyer}
+            onToggleLikeFlyer={handleToggleLikeFlyer}
+          />
+        );
       case 'privacy':
         return <PrivacyPolicy onBack={() => setActiveView('landing')} />;
     }
