@@ -68,7 +68,8 @@ import {
   Phone,
   Home,
   Globe,
-  Bookmark
+  Bookmark,
+  HelpCircle
 } from 'lucide-react';
 import { generateCoupon } from './services/geminiService';
 import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption, IzcalliFlyer } from './types';
@@ -2582,6 +2583,62 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
+  const [showTour, setShowTour] = useState<boolean>(() => {
+    return localStorage.getItem('cuponmania_marketplace_tour_shown') !== 'true';
+  });
+  const [tourStep, setTourStep] = useState<number>(0);
+
+  const tourSteps = [
+    {
+      title: "¡Te damos la bienvenida al Marketplace! 🎫",
+      subtitle: "Descubre promociones de impacto en Izcalli",
+      content: "Aquí encontrarás una selección curada de cupones y ofertas exclusivas de patrocinadores y comercios locales. El acceso es totalmente público y transparente.",
+      icon: <Ticket className="w-12 h-12 text-[#008F9A] animate-pulse" />,
+      color: "from-teal-500/10 to-emerald-500/10 text-teal-600"
+    },
+    {
+      title: "Guarda tus cupones preferidos 💾",
+      subtitle: "Consérvalos en tu cuponera personal",
+      content: "Haz clic en el botón con el ícono de disco en la tarjeta del cupón. Esto lo guardará instantáneamente en tu cuponera / billetera para que puedas verlo o canjearlo cuando quieras, ¡incluso de forma presencial!",
+      icon: <Save className="w-12 h-12 text-secondary animate-bounce" />,
+      color: "from-secondary/10 to-indigo-500/10 text-secondary"
+    },
+    {
+      title: "Abre y Redime en Pantalla Completa 🔍",
+      subtitle: "Interacción táctil y visual",
+      content: "Haz clic o toca la imagen de cualquier cupón para abrir el Visor de Alta Definición. ¡Puedes arrastrarlo con el dedo, ampliarlo con 'zoom pellizco' y girarlo! Muéstraselo al patrocinador para canjear tu oferta.",
+      icon: <ZoomIn className="w-12 h-12 text-amber-500" />,
+      color: "from-amber-500/10 to-orange-500/10 text-amber-600"
+    },
+    {
+      title: "Conoce a tus Patrocinadores 🏪",
+      subtitle: "Ubicación, redes y contacto",
+      content: "Usa el botón 'Info Negocio' para conocer la ubicación, redes sociales, horarios de atención y contacto del negocio que patrocina la oferta. ¡Apoyemos juntos lo local!",
+      icon: <Store className="w-12 h-12 text-emerald-500" />,
+      color: "from-emerald-500/10 to-teal-500/10 text-emerald-600"
+    }
+  ];
+
+  const handleNextStep = () => {
+    if (tourStep < tourSteps.length - 1) {
+      setTourStep(prev => prev + 1);
+    } else {
+      handleFinishTour();
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (tourStep > 0) {
+      setTourStep(prev => prev - 1);
+    }
+  };
+
+  const handleFinishTour = () => {
+    localStorage.setItem('cuponmania_marketplace_tour_shown', 'true');
+    setShowTour(false);
+    if (showFeedback) showFeedback('¡Excelente! Ahora estás listo para usar tus cupones.', 'success');
+  };
+
   const categories = useMemo(() => 
     ['Todos', ...Array.from(new Set(coupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean),
     [coupons]
@@ -2612,7 +2669,20 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
 
       {/* Categories below Flyer */}
       <div className="max-w-[1500px] mx-auto px-6 md:px-12 pt-10">
-        <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-6 leading-none">Explorar Cupones</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-2 sm:mb-0 leading-none">Explorar Cupones</h2>
+          <button 
+            type="button"
+            onClick={() => {
+              setTourStep(0);
+              setShowTour(true);
+            }}
+            className="flex items-center gap-2 px-5 py-3.5 bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/20 text-[10px] font-black uppercase tracking-widest rounded-full transition-all self-start sm:self-auto cursor-pointer active:scale-95"
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span>Guía Interactiva</span>
+          </button>
+        </div>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
           {categories.map(cat => (
             <button 
@@ -2696,6 +2766,116 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
         </div>
       )}
       </div>
+
+      {/* EXQUISITE INTERACTIVE STEP TOUR MODAL FOR NEW USERS */}
+      <AnimatePresence>
+        {showTour && (
+          <div className="fixed inset-0 z-[2000] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white text-black w-full max-w-lg rounded-[36px] overflow-hidden border border-black/5 shadow-2xl flex flex-col relative"
+            >
+              {/* Skip button in corner */}
+              <button 
+                onClick={handleFinishTour}
+                className="absolute top-6 right-6 p-2 text-black/45 hover:text-black/80 hover:bg-black/5 rounded-full transition-all cursor-pointer text-xs font-black uppercase tracking-widest px-3 py-1"
+                type="button"
+              >
+                Omitir
+              </button>
+
+              {/* Progress Line */}
+              <div className="w-full h-1.5 bg-gray-100 flex">
+                {tourSteps.map((_, idx) => (
+                  <div 
+                    key={idx}
+                    className={`h-full flex-1 transition-all duration-300 ${idx <= tourStep ? 'bg-[#008F9A]' : 'bg-transparent'}`}
+                  />
+                ))}
+              </div>
+
+              {/* Icon Container with dynamic colored gradient background */}
+              <div className={`p-10 pt-12 flex justify-center bg-gradient-to-br ${tourSteps[tourStep].color} transition-all duration-300`}>
+                <motion.div
+                  key={tourStep}
+                  initial={{ scale: 0.7, opacity: 0, rotate: -15 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 100 }}
+                  className="p-6 bg-white rounded-[24px] shadow-lg border border-black/5 flex items-center justify-center"
+                >
+                  {tourSteps[tourStep].icon}
+                </motion.div>
+              </div>
+
+              {/* Content Panel */}
+              <div className="p-8 md:p-10 text-center flex-1">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#008F9A] bg-[#008F9A]/10 px-3 py-1.5 rounded-full border border-[#008F9A]/10">
+                  PASO {tourStep + 1} DE {tourSteps.length}
+                </span>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={tourStep}
+                    initial={{ x: 15, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -15, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="mt-6 space-y-3"
+                  >
+                    <h3 className="text-xl md:text-2xl font-black tracking-tight text-neutral-900 uppercase">
+                      {tourSteps[tourStep].title}
+                    </h3>
+                    <p className="text-xs font-bold text-secondary tracking-wide uppercase opacity-70">
+                      {tourSteps[tourStep].subtitle}
+                    </p>
+                    <p className="text-sm text-neutral-600 leading-relaxed font-medium">
+                      {tourSteps[tourStep].content}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Actions Footer */}
+              <div className="p-6 bg-neutral-50 border-t border-black/5 flex items-center justify-between gap-4">
+                {/* Dots indicator */}
+                <div className="flex gap-1.5 pl-2">
+                  {tourSteps.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setTourStep(idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${idx === tourStep ? 'bg-[#008F9A] w-6' : 'bg-black/15 hover:bg-black/30'}`}
+                      type="button"
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {tourStep > 0 && (
+                    <button
+                      onClick={handlePrevStep}
+                      className="px-5 py-3.5 bg-white border border-black/5 hover:bg-gray-50 text-black/60 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 cursor-pointer"
+                      type="button"
+                    >
+                      Atrás
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleNextStep}
+                    className="px-8 py-3.5 bg-secondary hover:bg-secondary-dark text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-secondary/20 active:scale-95 cursor-pointer"
+                    type="button"
+                  >
+                    {tourStep === tourSteps.length - 1 ? "Comenzar" : "Siguiente"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -3792,7 +3972,7 @@ export default function App() {
     setCurrentUser(null);
     localStorage.removeItem('cuponmania_user');
     localStorage.removeItem('cuponmania_view');
-    setActiveView('landing');
+    setActiveView(cuponmaniaEnabled ? 'marketplace' : 'landing');
     resetAllForms(null);
     showFeedback('Sesión cerrada correctamente');
   };
@@ -4048,13 +4228,28 @@ export default function App() {
   });
   const [activeView, setActiveView] = useState<AppView>(() => {
     const savedView = localStorage.getItem('cuponmania_view') as AppView;
-    if (savedView) return savedView;
+    const isConfigEnabled = localStorage.getItem('cuponmania_enabled_local') !== 'false';
+    const savedRole = (localStorage.getItem('cuponmania_role') as UserRole) || 'usuario';
 
-    const savedRole = localStorage.getItem('cuponmania_role') as UserRole;
+    if (savedView) {
+      if (!isConfigEnabled && savedRole !== 'admin' && savedRole !== 'patrocinador' && (savedView === 'marketplace' || savedView === 'wallet')) {
+        return 'landing';
+      }
+      return savedView;
+    }
+
     if (savedRole === 'admin') return 'admin_dashboard';
     if (savedRole === 'patrocinador') return 'generator';
-    return 'landing';
+    return isConfigEnabled ? 'marketplace' : 'landing';
   });
+
+  useEffect(() => {
+    if (!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador') {
+      if (activeView === 'marketplace' || activeView === 'wallet') {
+        setActiveView('landing');
+      }
+    }
+  }, [cuponmaniaEnabled, currentRole, activeView]);
 
   useEffect(() => {
     localStorage.setItem('cuponmania_view', activeView);
@@ -5041,8 +5236,6 @@ export default function App() {
   };
 
   const renderSidebar = () => {
-    if (!currentUser) return null;
-
     const navItemClasses = (view: AppView) => `w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest transition-all ${activeView === view ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-105' : 'text-black/40 hover:bg-black/5'}`;
 
     return (
@@ -5079,7 +5272,23 @@ export default function App() {
             <nav className="flex-1 p-6 space-y-3 overflow-y-auto">
               <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">NAVEGACIÓN</div>
               
-              {currentRole === 'admin' ? (
+              {!currentUser ? (
+                <>
+                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                  </button>
+
+                  {cuponmaniaEnabled && (
+                    <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                    </button>
+                  )}
+
+                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  </button>
+                </>
+              ) : currentRole === 'admin' ? (
                 <>
                   <button onClick={() => setActiveView('admin_dashboard')} className={navItemClasses('admin_dashboard')}>
                      <LayoutDashboard className="w-5 h-5" /> <span>Métricas</span>
@@ -5106,9 +5315,11 @@ export default function App() {
                      <Home className="w-5 h-5" /> <span>Página de Inicio</span>
                   </button>
 
-                  <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
-                  </button>
+                  {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
+                    <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                    </button>
+                  )}
 
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
@@ -5135,16 +5346,18 @@ export default function App() {
               <div className="text-[10px] font-black tracking-[0.2em] text-black/20 ml-2 mb-4 uppercase">CUENTA</div>
               
               <button onClick={() => setActiveView('profile')} className={navItemClasses('profile')}>
-                 <User className="w-5 h-5" /> <span>Mi Perfil</span>
+                 <User className="w-5 h-5" /> <span>{currentUser ? 'Mi Perfil' : 'Iniciar Sesión'}</span>
               </button>
 
-              <button onClick={() => setActiveView('notifications')} className={navItemClasses('notifications')}>
-                 <div className="relative">
-                   <Bell className="w-5 h-5" />
-                   {unreadCount > 0 && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />}
-                 </div>
-                 <span>Notificaciones</span>
-              </button>
+              {currentUser && (
+                <button onClick={() => setActiveView('notifications')} className={navItemClasses('notifications')}>
+                   <div className="relative">
+                     <Bell className="w-5 h-5" />
+                     {unreadCount > 0 && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />}
+                   </div>
+                   <span>Notificaciones</span>
+                </button>
+              )}
 
               <button onClick={() => setActiveView('privacy')} className={navItemClasses('privacy')}>
                  <ShieldCheck className="w-5 h-5" /> <span>Privacidad</span>
@@ -5174,9 +5387,11 @@ export default function App() {
                   </button>
                 )}
 
-                <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 hover:bg-red-50 transition-all">
-                   <RefreshCw className="w-5 h-5" /> <span>Cerrar Sesión</span>
-                </button>
+                {currentUser && (
+                  <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 hover:bg-red-50 transition-all">
+                     <RefreshCw className="w-5 h-5" /> <span>Cerrar Sesión</span>
+                  </button>
+                )}
               </div>
             </nav>
           </div>
@@ -5768,8 +5983,11 @@ export default function App() {
           
           <button 
             onClick={() => {
-              if (currentUser?.role === 'admin') setActiveView('admin_dashboard');
-              else setActiveView('landing');
+              if (currentUser?.role === 'admin') {
+                setActiveView('admin_dashboard');
+              } else {
+                setActiveView(cuponmaniaEnabled ? 'marketplace' : 'landing');
+              }
             }}
             className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           >
@@ -5868,40 +6086,85 @@ export default function App() {
       
       {/* Mobile Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-secondary border-t border-white/10 flex items-center justify-around px-2 z-[1000] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-white">
+        
+        {/* Dynamic Navigation for Admin */}
         {currentUser?.role === 'admin' && (
-          <button onClick={() => setActiveView('admin_dashboard')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'admin_dashboard' ? 'text-white scale-110' : 'text-white/40'}`}>
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="text-[7px] font-black uppercase">Admin</span>
-          </button>
+          <>
+            <button onClick={() => setActiveView('admin_dashboard')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'admin_dashboard' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Admin</span>
+            </button>
+            <button onClick={() => { setActiveView('generator'); setCoupon(null); }} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'generator' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Ticket className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Crear</span>
+            </button>
+            <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <LayoutGrid className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Cupones</span>
+            </button>
+            <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Izcalli</span>
+            </button>
+          </>
         )}
-        {(currentUser?.role === 'admin' || currentUser?.role === 'patrocinador') && (
-          <button onClick={() => { setActiveView('generator'); setCoupon(null); }} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'generator' ? 'text-white scale-110' : 'text-white/40'}`}>
-            <Ticket className="w-5 h-5" />
-            <span className="text-[7px] font-black uppercase">Crear</span>
-          </button>
+
+        {/* Dynamic Navigation for Patrocinador */}
+        {currentUser?.role === 'patrocinador' && (
+          <>
+            <button onClick={() => { setActiveView('generator'); setCoupon(null); }} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'generator' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Ticket className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Crear</span>
+            </button>
+            <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Izcalli</span>
+            </button>
+            {cuponmaniaEnabled && (
+              <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
+                <LayoutGrid className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase">Cupones</span>
+              </button>
+            )}
+            <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Ticket className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Mis Cupones</span>
+            </button>
+          </>
         )}
-        <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
-          <Megaphone className="w-5 h-5" />
-          <span className="text-[7px] font-black uppercase">Izcalli</span>
-        </button>
-        {/* Seccion Cuponmanía oculta */}
-        <button onClick={() => setActiveView('notifications')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'notifications' ? 'text-white scale-110' : 'text-white/40'}`}>
-          <div className="relative">
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-secondary" />}
-          </div>
-          <span className="text-[7px] font-black uppercase">Avisos</span>
-        </button>
-        {(currentUser?.role === 'admin' || currentUser?.role === 'patrocinador') && (
-          <button onClick={() => setActiveView('coupon_counter')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'coupon_counter' ? 'text-white scale-110' : 'text-white/40'}`}>
-            <QrCode className="w-5 h-5" />
-            <span className="text-[7px] font-black uppercase">Contador</span>
-          </button>
+
+        {/* Dynamic Navigation for Guest / Standard Registered User */}
+        {(!currentUser || currentUser?.role === 'usuario') && (
+          <>
+            <button onClick={() => setActiveView('landing')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'landing' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Home className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Inicio</span>
+            </button>
+            {cuponmaniaEnabled && (
+              <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
+                <LayoutGrid className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase">Cupones</span>
+              </button>
+            )}
+            <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Izcalli</span>
+            </button>
+            {cuponmaniaEnabled && currentUser && (
+              <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
+                <Ticket className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase">Billetera</span>
+              </button>
+            )}
+          </>
         )}
+
+        {/* Standard User / Notifications Access and Logout Option */}
         <button onClick={() => setActiveView('profile')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'profile' ? 'text-white scale-110' : 'text-white/40'}`}>
           <User className="w-5 h-5" />
-          <span className="text-[7px] font-black uppercase">Perfil</span>
+          <span className="text-[7px] font-black uppercase">{currentUser ? 'Perfil' : 'Acceso'}</span>
         </button>
+
         {currentUser && (
           <button onClick={handleLogout} className="flex flex-col items-center gap-1 text-red-400">
             <RefreshCw className="w-5 h-5" />
