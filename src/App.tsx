@@ -1606,19 +1606,20 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
 
   const offerText = config?.data?.oferta?.texto || 'OFERTA ESPECIAL';
   
-  let fontStyleClass = "text-[72px] leading-[0.85]";
-  if (offerText.length > 60) {
-    fontStyleClass = "text-[26px] leading-[1.1]";
-  } else if (offerText.length > 45) {
-    fontStyleClass = "text-[32px] leading-[1.1]";
-  } else if (offerText.length > 30) {
-    fontStyleClass = "text-[40px] leading-[1.05]";
-  } else if (offerText.length > 20) {
-    fontStyleClass = "text-[52px] leading-[1.0]";
-  } else if (offerText.length > 12) {
-    fontStyleClass = "text-[64px] leading-[0.9]";
-  }
+  // Dynamic font size calculation based on the text length (keeps text legible and automatically adjusts)
+  const getOfferFontSize = (text: string) => {
+    const len = text?.length || 0;
+    if (len <= 8) return 84;
+    if (len <= 15) return 72;
+    if (len <= 25) return 60;
+    if (len <= 35) return 48;
+    if (len <= 50) return 42;
+    if (len <= 70) return 36;
+    return 30; // Minimum size for extremely long texts
+  };
 
+  const offerFontSize = getOfferFontSize(offerText);
+  const offerLineHeight = offerFontSize > 64 ? '0.85' : offerFontSize > 44 ? '1.0' : '1.1';
   const gapClass = offerText.length > 45 ? 'gap-3' : 'gap-6';
 
   const formatDate = (dateStr?: string) => {
@@ -1670,7 +1671,10 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
 
           {/* Right: Big Impact Offer (Secondary to Logo in layout hierarchy per request) */}
           <div className={`flex-1 flex flex-col items-center sm:items-end justify-center text-center sm:text-right ${gapClass}`}>
-            <h2 className={`${fontStyleClass} font-black uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white tracking-tighter`}>
+            <h2 
+              style={{ fontSize: `${offerFontSize}px`, lineHeight: offerLineHeight }}
+              className="font-black uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white tracking-tighter"
+            >
               {offerText}
             </h2>
             <div className="mt-2 text-white">
