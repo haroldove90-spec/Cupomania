@@ -4867,6 +4867,15 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
+          {currentUser?.role === 'admin' && (
+            <button
+              onClick={() => setActiveView('admin_dashboard')}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[10.5px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Panel Control</span>
+            </button>
+          )}
           {currentUser && (
             <div className="flex flex-col items-end hidden sm:flex text-right">
               {currentUser.role === 'patrocinador' ? (
@@ -4903,6 +4912,41 @@ export default function App() {
       <main className="flex-1 relative w-full h-full overflow-y-auto pt-16 md:pt-24" id="root-scroll-area">
         {renderSidebar()}
         <section className={`transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'} pb-24 md:pb-0 relative w-full min-h-full flex flex-col`}>
+          {currentUser?.role === 'admin' && (
+            <div className="bg-amber-50 border-b border-amber-200/60 p-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm z-[90]">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${cuponmaniaEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <Ticket className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-black uppercase tracking-tight text-gray-900">
+                    Control Administrativo del Módulo Cuponmanía
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mt-1">
+                    Estado: <span className={cuponmaniaEnabled ? 'text-green-600 font-extrabold' : 'text-red-500 font-extrabold'}>{cuponmaniaEnabled ? '✅ ACTIVO (PÚBLICO)' : '❌ DESACTIVADO (OCULTO PARA PÚBLICO)'}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => setActiveView('admin_dashboard')}
+                  className="flex-1 sm:flex-initial px-4 py-2 bg-black text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all text-center cursor-pointer"
+                >
+                  Ir al Panel
+                </button>
+                <button
+                  onClick={() => updateCuponmaniaSettings(!cuponmaniaEnabled)}
+                  className={`flex-1 sm:flex-initial px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl text-white transition-all shadow-sm cursor-pointer ${
+                    cuponmaniaEnabled 
+                      ? 'bg-red-600 hover:bg-red-700 shadow-red-600/10' 
+                      : 'bg-green-600 hover:bg-green-700 shadow-green-600/10'
+                  }`}
+                >
+                  {cuponmaniaEnabled ? 'Desactivar Módulo' : 'Activar Módulo'}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex-1">
             {renderMainContent()}
           </div>
