@@ -2770,6 +2770,55 @@ export default function App() {
     flyer2: 'https://cossma.com.mx/cuponmaniaflyer2.png' 
   });
 
+  const [cuponmaniaEnabled, setCuponmaniaEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('cuponmania_enabled_local');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const fetchCuponmaniaSettings = async () => {
+    try {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'cuponmania_config')
+        .maybeSingle();
+      
+      if (!error && data && data.value) {
+        const val = data.value as any;
+        const isEnabled = val?.enabled === undefined ? true : !!val.enabled;
+        setCuponmaniaEnabled(isEnabled);
+        localStorage.setItem('cuponmania_enabled_local', isEnabled ? 'true' : 'false');
+      }
+    } catch (err) {
+      console.warn('Failed to fetch Cuponmania settings:', err);
+    }
+  };
+
+  const updateCuponmaniaSettings = async (enabled: boolean) => {
+    setCuponmaniaEnabled(enabled);
+    localStorage.setItem('cuponmania_enabled_local', enabled ? 'true' : 'false');
+    try {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'cuponmania_config', value: { enabled } }, { onConflict: 'key' });
+      
+      if (!error) {
+        showFeedback(`Módulo Cuponmanía ${enabled ? 'activado' : 'desactivado'} con éxito`);
+      } else {
+        console.error('Supabase error saving cuponmania setting:', error);
+        showFeedback('Guardado localmente', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving setting:', err);
+      showFeedback('Guardado localmente', 'success');
+    }
+  };
+
   const fetchFlyerSettings = async () => {
     try {
       // Intento de recuperación local primero (rápido)
@@ -2821,6 +2870,7 @@ export default function App() {
 
   useEffect(() => {
     fetchFlyerSettings();
+    fetchCuponmaniaSettings();
   }, []);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -4424,46 +4474,69 @@ export default function App() {
           <div className="relative w-full h-full min-h-[calc(100vh-80px)]">
             <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} />
             
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white/40 backdrop-blur-2xl p-8 md:p-14 rounded-[30px] md:rounded-[60px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border border-white/40 text-center w-full max-w-[90%] md:max-w-lg transform transition-all"
-              >
-                <div className="w-20 h-20 md:w-28 md:h-28 bg-primary/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 md:mb-10 text-primary animate-pulse shadow-inner">
-                  <Calendar className="w-10 h-10 md:w-14 md:h-14" />
-                </div>
-                
-                <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-4 md:mb-6 leading-none text-black drop-shadow-sm">
-                  Próximamente
-                </h2>
-                
-                <div className="w-12 md:w-20 h-1.5 md:h-2 bg-primary mx-auto mb-6 md:mb-10 rounded-full" />
-                
-                <p className="text-sm md:text-lg font-bold uppercase tracking-[0.15em] md:tracking-[0.25em] text-black/70 mb-8 md:mb-12 leading-relaxed max-w-sm mx-auto">
-                  Estamos preparando la mayor red de beneficios. <br/>
-                  <span className="text-primary font-black block mt-2 text-xl">Disponible en Junio 2026.</span>
-                </p>
-                
-                <button 
-                  onClick={() => setActiveView('landing')}
-                  className="mb-10 px-12 py-5 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-secondary transition-all active:scale-95 shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 mx-auto"
+            {!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador' && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="bg-white/40 backdrop-blur-2xl p-8 md:p-14 rounded-[30px] md:rounded-[60px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border border-white/40 text-center w-full max-w-[90%] md:max-w-lg transform transition-all"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  Regresar al Inicio
-                </button>
-                
-                <div className="flex items-center justify-center gap-3 md:gap-5">
-                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </motion.div>
-            </div>
+                  <div className="w-20 h-20 md:w-28 md:h-28 bg-primary/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 md:mb-10 text-primary animate-pulse shadow-inner">
+                    <Calendar className="w-10 h-10 md:w-14 md:h-14" />
+                  </div>
+                  
+                  <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-4 md:mb-6 leading-none text-black drop-shadow-sm">
+                    Próximamente
+                  </h2>
+                  
+                  <div className="w-12 md:w-20 h-1.5 md:h-2 bg-primary mx-auto mb-6 md:mb-10 rounded-full" />
+                  
+                  <p className="text-sm md:text-lg font-bold uppercase tracking-[0.15em] md:tracking-[0.25em] text-black/70 mb-8 md:mb-12 leading-relaxed max-w-sm mx-auto">
+                    Estamos preparando la mayor red de beneficios. <br/>
+                    <span className="text-primary font-black block mt-2 text-xl">Disponible en Junio 2026.</span>
+                  </p>
+                  
+                  <button 
+                    onClick={() => setActiveView('landing')}
+                    className="mb-10 px-12 py-5 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-secondary transition-all active:scale-95 shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 mx-auto"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Regresar al Inicio
+                  </button>
+                  
+                  <div className="flex items-center justify-center gap-3 md:gap-5">
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </div>
         );
       case 'coupon_counter': return <CouponCounterView currentUser={currentUser!} coupons={activeCoupons} showFeedback={showFeedback} />;
       case 'wallet': 
+        if (!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador') {
+          return (
+            <div className="relative w-full h-full min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+              <div className="text-center bg-white p-8 md:p-12 rounded-[32px] border border-black/5 max-w-md w-full">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary">
+                  <Calendar className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Cuponera Digital</h3>
+                <p className="text-xs text-black/40 font-bold uppercase tracking-widest leading-relaxed mb-6">
+                  El sistema de cupones estará disponible para todos en Junio 2026.
+                </p>
+                <button 
+                  onClick={() => setActiveView('landing')}
+                  className="px-8 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all active:scale-95"
+                >
+                  Regresar al Inicio
+                </button>
+              </div>
+            </div>
+          );
+        }
         return currentUser?.role === 'patrocinador' 
           ? <SponsorDashboard coupons={activeCoupons} onTogglePublish={togglePublishStatus} onDelete={handleDeleteCoupon} /> 
           : <WalletView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingSaved || isFetchingCoupons} />;
@@ -4522,6 +4595,37 @@ export default function App() {
           <div className="p-8 md:p-12">
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Panel de Control</h2>
             <AdminMetricsView metrics={adminMetrics} />
+
+            {/* Control de Módulo Cuponmanía */}
+            <div className="mt-8 p-6 bg-white rounded-[32px] border border-black/5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className={`p-4 rounded-2xl shrink-0 transition-all ${cuponmaniaEnabled ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  <Ticket className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Módulo Cuponmanía</h3>
+                  <p className="text-xs text-black/40 font-bold uppercase tracking-widest leading-none mt-1">
+                    Estado actual: <span className={cuponmaniaEnabled ? 'text-green-600 font-extrabold' : 'text-red-600 font-extrabold'}>{cuponmaniaEnabled ? 'ACTIVO (PÚBLICO)' : 'DESACTIVADO (OCULTO PARA USUARIOS)'}</span>
+                  </p>
+                  <p className="text-[10px] text-black/50 font-medium leading-relaxed mt-2 max-w-xl">
+                    {cuponmaniaEnabled 
+                      ? 'Los visitantes pueden ver, buscar, y guardar cupones en el catálogo. Los patrocinadores pueden crearlos.' 
+                      : 'El catálogo y la billetera están deshabilitados con el cartel de lanzamiento en Junio para todo público. Los ADMINISTRADORES y PATROCINADORES pueden seguir viéndolos para validación.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => updateCuponmaniaSettings(!cuponmaniaEnabled)}
+                className={`w-full md:w-auto px-8 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                  cuponmaniaEnabled 
+                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/15' 
+                    : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/15'
+                }`}
+              >
+                {cuponmaniaEnabled ? 'Desactivar Módulo' : 'Activar Módulo'}
+              </button>
+            </div>
+
             <div className="mt-12">
               <h3 className="text-xl font-black uppercase tracking-tight mb-6">Actividad Reciente</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
