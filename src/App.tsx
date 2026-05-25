@@ -48,6 +48,8 @@ import {
   Database,
   LayoutDashboard,
   Maximize2,
+  ZoomIn,
+  ZoomOut,
   Eye,
   EyeOff,
   Bell,
@@ -1654,10 +1656,10 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
       <div className="absolute top-1/2 -left-6 w-12 h-12 bg-[#fafafa] rounded-full -translate-y-1/2 shadow-inner z-20"></div>
       <div className="absolute top-1/2 -right-6 w-12 h-12 bg-[#fafafa] rounded-full -translate-y-1/2 shadow-inner z-20"></div>
 
-      <div className="relative h-full w-full p-12 flex flex-col z-10 font-sans">
+      <div className="relative h-full w-full p-12 flex flex-col justify-between z-10 font-sans">
         
         {/* Top Section */}
-        <div className="flex flex-1 flex-col sm:flex-row items-center gap-10">
+        <div className="flex flex-1 flex-row items-center justify-between gap-10">
           {/* Section: Logo (Protagonista) */}
           <div className="flex-1 flex items-center justify-center min-h-[220px]">
              <img 
@@ -1670,7 +1672,7 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
           </div>
 
           {/* Right: Big Impact Offer (Secondary to Logo in layout hierarchy per request) */}
-          <div className={`flex-1 flex flex-col items-center sm:items-end justify-center text-center sm:text-right ${gapClass}`}>
+          <div className={`flex-1 flex flex-col items-end justify-center text-right ${gapClass}`}>
             <h2 
               style={{ fontSize: `${offerFontSize}px`, lineHeight: offerLineHeight }}
               className="font-black uppercase drop-shadow-[0_15px_30px_rgba(0,0,0,0.4)] text-white tracking-tighter"
@@ -2174,6 +2176,16 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.4);
 
+  // Lightbox Zoom and Pan states
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
+  const [initialPinchScale, setInitialPinchScale] = useState(1);
+  const [lightboxBaseScale, setLightboxBaseScale] = useState(1);
+
   useEffect(() => {
     const updateScale = () => {
       if (containerRef.current) {
@@ -2190,7 +2202,6 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
     let observer: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
       observer = new ResizeObserver(() => {
-        // Use requestAnimationFrame for smoother updates and avoid loop errors
         requestAnimationFrame(updateScale);
       });
       observer.observe(containerRef.current);
@@ -2203,6 +2214,89 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
     };
   }, []);
 
+  // Update dynamic base scale for lightbox on screen resize
+  useEffect(() => {
+    if (!isZoomed) return;
+    const calculateBaseScale = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Subtract margins and headers/footers space
+      const calculated = Math.min((w - 48) / 1000, (h - 220) / 550);
+      setLightboxBaseScale(Math.min(1.2, Math.max(0.3, calculated)));
+    };
+    calculateBaseScale();
+    window.addEventListener('resize', calculateBaseScale);
+    return () => window.removeEventListener('resize', calculateBaseScale);
+  }, [isZoomed]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setPanOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - panOffset.x, y: e.touches[0].clientY - panOffset.y });
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      setInitialPinchDist(dist);
+      setInitialPinchScale(zoomScale);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      setPanOffset({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    } else if (e.touches.length === 2 && initialPinchDist !== null) {
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const factor = dist / initialPinchDist;
+      const newScale = Math.min(4, Math.max(0.5, initialPinchScale * factor));
+      setZoomScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setInitialPinchDist(null);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    const delta = e.deltaY;
+    const factor = delta < 0 ? 1.15 : 0.85;
+    const newScale = Math.min(4, Math.max(0.5, zoomScale * factor));
+    setZoomScale(newScale);
+  };
+
+  const handleReset = () => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
   return (
     <div ref={containerRef} className="w-full flex flex-col gap-6">
       <div className="flex items-center gap-2 px-2">
@@ -2214,19 +2308,131 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
         className="w-full relative overflow-visible flex justify-center items-start pt-2"
         style={{ height: `${550 * scale + 48}px` }}
       >
-        <div className="flex justify-center overflow-hidden" style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}>
+        <div 
+          onClick={() => setIsZoomed(true)}
+          className="flex justify-center overflow-hidden relative group/ticket cursor-zoom-in rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 border border-black/5" 
+          style={{ width: `${1000 * scale}px`, height: `${550 * scale}px` }}
+        >
           {coupon.imageData ? (
             <img 
               src={coupon.imageData} 
-              className="w-full h-full object-contain" 
+              className="w-full h-full object-contain transition-transform duration-500 group-hover/ticket:scale-[1.03]" 
               alt="Coupon Image"
               loading="lazy"
             />
           ) : (
-            <CouponTicket config={coupon} scale={scale} origin="origin-top" />
+            <div className="transition-transform duration-500 group-hover/ticket:scale-[1.03]">
+              <CouponTicket config={coupon} scale={scale} origin="origin-top" />
+            </div>
           )}
+
+          {/* Premium Hover Zoom Overlay Indicator */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/ticket:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 text-white z-30">
+            <ZoomIn className="w-7 h-7 animate-pulse text-primary" />
+            <span className="text-[10px] font-black uppercase tracking-widest bg-black/60 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
+              Ampliar / Zoom
+            </span>
+          </div>
         </div>
       </motion.div>
+
+      {/* GORGEOUS IN-APP FULLSCREEN ZOOM LIGHTBOX */}
+      <AnimatePresence>
+        {isZoomed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex flex-col justify-between items-center p-4 md:p-8 select-none"
+            onWheel={handleWheel}
+          >
+            {/* Lightbox Header - Brand Branding and Close Button */}
+            <div className="w-full flex justify-between items-center z-[1010] max-w-6xl">
+              <div className="flex flex-col">
+                <span className="text-primary text-[10px] font-black uppercase tracking-widest bg-primary/15 px-3 py-1.5 rounded-full border border-primary/20 w-fit">
+                  {normalizeCategory(coupon.data.categoria)}
+                </span>
+                <span className="text-white text-xl md:text-2xl font-black uppercase tracking-tight mt-2 leading-none">
+                  {coupon.data.header.nombre_negocio}
+                </span>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setIsZoomed(false);
+                  handleReset();
+                }}
+                className="p-3 bg-white/10 hover:bg-white/20 select-none text-white rounded-full transition-all cursor-pointer border border-white/5 active:scale-95 z-50 hover:rotate-90 duration-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Stage where dragging and gestures occur */}
+            <div 
+              className="flex-1 w-full flex items-center justify-center overflow-hidden touch-none relative cursor-grab active:cursor-grabbing"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div 
+                style={{ 
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${lightboxBaseScale * zoomScale})`,
+                  transformOrigin: 'center center'
+                }}
+                className="transition-transform duration-75 select-none pointer-events-none force-no-responsive"
+              >
+                {coupon.imageData ? (
+                  <img 
+                    src={coupon.imageData} 
+                    className="w-[1000px] h-[550px] object-contain rounded-[32px] shadow-2xl bg-black" 
+                    alt="Coupon Image Large"
+                  />
+                ) : (
+                  <CouponTicket config={coupon} scale={1} origin="origin-center" />
+                )}
+              </div>
+            </div>
+
+            {/* Controls panel */}
+            <div className="w-full flex flex-col items-center gap-4 z-[1010] max-w-lg mb-4">
+              <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest text-center">
+                Pellizca con 2 dedos • Rueda del mouse • Arrastra para explorar
+              </p>
+              
+              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-6 shadow-xl w-fit">
+                <button 
+                  onClick={() => setZoomScale(s => Math.max(0.5, s / 1.25))}
+                  className="text-white hover:text-primary transition-colors p-2 cursor-pointer active:scale-95"
+                  title="Alejar"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+                <div className="w-[1px] h-4 bg-white/20" />
+                <button 
+                  onClick={handleReset}
+                  className="text-white hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest px-4 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/5 cursor-pointer active:scale-95"
+                  title="Restablecer"
+                >
+                  Restablecer
+                </button>
+                <div className="w-[1px] h-4 bg-white/20" />
+                <button 
+                  onClick={() => setZoomScale(s => Math.min(4, s * 1.25))}
+                  className="text-white hover:text-primary transition-colors p-2 cursor-pointer active:scale-95"
+                  title="Acercar"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex items-center justify-between gap-4 px-4 pb-2">
         <div className="flex-1 flex gap-2">
