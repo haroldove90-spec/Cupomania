@@ -78,18 +78,10 @@ export default function EnlaceIzcalliView({
     loadData();
   }, []);
 
-  // Update dynamic base scale for lightbox on screen resize
+  // Update dynamic base scale for lightbox on screen resize (locked to 1 to use pure css responsive sizing)
   useEffect(() => {
     if (!activeLightboxFlyer) return;
-    const calculateBaseScale = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const calculated = Math.min((w - 48) / 800, (h - 220) / 600);
-      setLightboxBaseScale(Math.min(1.2, Math.max(0.3, calculated)));
-    };
-    calculateBaseScale();
-    window.addEventListener('resize', calculateBaseScale);
-    return () => window.removeEventListener('resize', calculateBaseScale);
+    setLightboxBaseScale(1);
   }, [activeLightboxFlyer]);
 
   const loadData = async () => {
@@ -940,11 +932,11 @@ export default function EnlaceIzcalliView({
                   transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${lightboxBaseScale * zoomScale}) rotate(${rotation}deg)`,
                   transformOrigin: 'center center'
                 }}
-                className="transition-transform duration-75 select-none pointer-events-none"
+                className="transition-transform duration-75 select-none pointer-events-none flex items-center justify-center w-full h-full"
               >
                 <img 
                   src={activeLightboxFlyer.imageUrl} 
-                  className="w-[1000px] h-[580px] object-contain rounded-[24px] shadow-2xl bg-neutral-900" 
+                  className="w-full h-auto max-w-[95vw] max-h-[72vh] md:max-w-[1000px] md:max-h-[580px] object-contain rounded-2xl md:rounded-[24px] shadow-2xl bg-neutral-900" 
                   alt={activeLightboxFlyer.title}
                 />
               </div>
