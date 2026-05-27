@@ -84,6 +84,18 @@ export default function EnlaceIzcalliView({
     setLightboxBaseScale(1);
   }, [activeLightboxFlyer]);
 
+  // Dynamically filter categories to only show those that have at least one flyer
+  const activeCategories = React.useMemo(() => {
+    return categories.filter(cat => flyers.some(f => f.category === cat));
+  }, [categories, flyers]);
+
+  // Cleanly auto-reset the selected category filter to 'Todos' if its active status disappears (e.g. after flyer deletion)
+  useEffect(() => {
+    if (selectedCategory !== 'Todos' && !activeCategories.includes(selectedCategory)) {
+      setSelectedCategory('Todos');
+    }
+  }, [selectedCategory, activeCategories]);
+
   const loadData = async () => {
     setIsLoading(true);
     let loadedFlyers: IzcalliFlyer[] = [];
@@ -542,7 +554,7 @@ export default function EnlaceIzcalliView({
                 <Grid className="w-3.5 h-3.5" />
                 Todos
               </button>
-              {categories.map(cat => (
+              {activeCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
