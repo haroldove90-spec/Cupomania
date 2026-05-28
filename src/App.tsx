@@ -5403,7 +5403,7 @@ export default function App() {
                   )}
 
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                     <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
                 </>
               ) : currentRole === 'admin' ? (
@@ -5418,7 +5418,7 @@ export default function App() {
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                     <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
                   <button onClick={() => setActiveView('generator')} className={navItemClasses('generator')}>
                      <Sparkles className="w-5 h-5" /> <span>Generador de cupones</span>
@@ -5444,13 +5444,13 @@ export default function App() {
                   </button>
 
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                     <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
                 </>
               ) : (
                 <>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                     <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
 
                   {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
@@ -6324,7 +6324,7 @@ export default function App() {
             )}
             <button onClick={() => setActiveView('landing')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'landing' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Home className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Inicio</span>
+              <span className="text-[7px] font-black uppercase">Promociona</span>
             </button>
             {cuponmaniaEnabled && currentUser && (
               <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
