@@ -124,5 +124,7 @@ export interface IzcalliFlyer {
   creatorId: string;
   creatorName: string;
   createdAt: string;
+  whatsapp?: string;
+  phone?: string;
 }
 

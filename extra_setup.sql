@@ -40,3 +40,18 @@ BEGIN
     DROP POLICY IF EXISTS "Borrado para administradores y dueños" ON public.photo_registrations;
     CREATE POLICY "Borrado para administradores y dueños" ON public.photo_registrations FOR DELETE USING (true);
 END $$;
+
+-- 4. Asegurar que public.izcalli_flyers tenga whatsapp y phone
+CREATE TABLE IF NOT EXISTS public.izcalli_flyers (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    image_url TEXT NOT NULL,
+    category_name TEXT,
+    creator_id TEXT,
+    creator_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.izcalli_flyers ADD COLUMN IF NOT EXISTS whatsapp TEXT;
+ALTER TABLE public.izcalli_flyers ADD COLUMN IF NOT EXISTS phone TEXT;
+

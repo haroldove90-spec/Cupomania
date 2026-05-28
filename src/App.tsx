@@ -2911,6 +2911,15 @@ const WalletView = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'coupons' | 'flyers'>('coupons');
   const [flyers, setFlyers] = useState<IzcalliFlyer[]>([]);
+
+  const formatWhatsAppUrl = (phone: string) => {
+    const clean = phone.replace(/\D/g, '');
+    if (!clean) return '';
+    if (clean.length > 10 && (clean.startsWith('52') || clean.startsWith('1'))) {
+      return `https://wa.me/${clean}`;
+    }
+    return `https://wa.me/52${clean}`;
+  };
   const [isFetchingFlyers, setIsFetchingFlyers] = useState(false);
 
   // Lightbox view states for deep zoom, pan, and rotate
@@ -2941,7 +2950,9 @@ const WalletView = ({
               category: f.category_name,
               creatorId: f.creator_id,
               creatorName: f.creator_name || 'Anónimo',
-              createdAt: f.created_at
+              createdAt: f.created_at,
+              whatsapp: f.whatsapp || '',
+              phone: f.phone || ''
             }));
           }
         }
@@ -3169,6 +3180,36 @@ const WalletView = ({
                         Ver Mas Grande
                       </span>
                     </div>
+
+                    {/* Floating One-Click Quick Contacts */}
+                    {(flyer.whatsapp || flyer.phone) && (
+                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-25 gap-2 pointer-events-none">
+                        <div className="flex gap-1.5 pointer-events-auto">
+                          {flyer.whatsapp && (
+                            <a
+                              href={formatWhatsAppUrl(flyer.whatsapp)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                              title={`WhatsApp: ${flyer.whatsapp}`}
+                            >
+                              <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
+                            </a>
+                          )}
+                          {flyer.phone && (
+                            <a
+                              href={`tel:${flyer.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                              title={`Llamar: ${flyer.phone}`}
+                            >
+                              <Phone className="w-4 h-4 fill-white text-indigo-500" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-3 bg-white flex items-center justify-between gap-2 border-t border-black/5 shrink-0">
@@ -3248,6 +3289,32 @@ const WalletView = ({
                 <span className="text-white/40 text-[9px] font-bold uppercase tracking-widest mt-1 text-left">
                   Publicado por: {activeLightboxFlyer.creatorName}
                 </span>
+
+                {/* Direct tactile contact buttons for Lightbox */}
+                {(activeLightboxFlyer.whatsapp || activeLightboxFlyer.phone) && (
+                  <div className="flex flex-wrap gap-2 mt-3 select-none">
+                    {activeLightboxFlyer.whatsapp && (
+                      <a
+                        href={formatWhatsAppUrl(activeLightboxFlyer.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
+                        <span>Chat de WhatsApp</span>
+                      </a>
+                    )}
+                    {activeLightboxFlyer.phone && (
+                      <a
+                        href={`tel:${activeLightboxFlyer.phone}`}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      >
+                        <Phone className="w-4 h-4 fill-white text-indigo-500" />
+                        <span>Llamar por Teléfono</span>
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               
               <button 

@@ -16,10 +16,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Heart,
-  Bookmark
+  Bookmark,
+  Phone,
+  MessageCircle
 } from 'lucide-react';
 import { getSupabase } from '../lib/supabase';
 import { UserProfile, IzcalliFlyer } from '../types';
+import { extractContactInfoFromFlyer } from '../services/geminiService';
 
 interface EnlaceIzcalliViewProps {
   currentUser: UserProfile | null;
@@ -59,6 +62,11 @@ export default function EnlaceIzcalliView({
   const [flyerImageData, setFlyerImageData] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  
+  // Contacts extracted from flyer image by AI
+  const [flyerWhatsapp, setFlyerWhatsapp] = useState('');
+  const [flyerPhone, setFlyerPhone] = useState('');
+  const [isExtractingContacts, setIsExtractingContacts] = useState(false);
 
   // Lightbox view states for deep zoom, pan, and rotate
   const [activeLightboxFlyer, setActiveLightboxFlyer] = useState<IzcalliFlyer | null>(null);
@@ -96,6 +104,46 @@ export default function EnlaceIzcalliView({
     }
   }, [selectedCategory, activeCategories]);
 
+  // Trigger AI contact extraction when a new flyer image is loaded
+  useEffect(() => {
+    if (!flyerImageData) {
+      setFlyerWhatsapp('');
+      setFlyerPhone('');
+      return;
+    }
+
+    const extractContacts = async () => {
+      setIsExtractingContacts(true);
+      try {
+        const result = await extractContactInfoFromFlyer(flyerImageData);
+        if (result.whatsapp) {
+          setFlyerWhatsapp(result.whatsapp);
+        }
+        if (result.phone) {
+          setFlyerPhone(result.phone);
+        }
+        if (result.whatsapp || result.phone) {
+          showFeedback('¡Información de contacto extraída por IA con éxito!', 'success');
+        }
+      } catch (err) {
+        console.error('Error extracting contacts:', err);
+      } finally {
+        setIsExtractingContacts(false);
+      }
+    };
+
+    extractContacts();
+  }, [flyerImageData]);
+
+  const formatWhatsAppUrl = (phone: string) => {
+    const clean = phone.replace(/\D/g, '');
+    if (!clean) return '';
+    if (clean.length > 10 && (clean.startsWith('52') || clean.startsWith('1'))) {
+      return `https://wa.me/${clean}`;
+    }
+    return `https://wa.me/52${clean}`;
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     let loadedFlyers: IzcalliFlyer[] = [];
@@ -127,7 +175,9 @@ export default function EnlaceIzcalliView({
             category: f.category_name,
             creatorId: f.creator_id,
             creatorName: f.creator_name || 'Anónimo',
-            createdAt: f.created_at
+            createdAt: f.created_at,
+            whatsapp: f.whatsapp || '',
+            phone: f.phone || ''
           }));
         } else if (flyerError) {
           console.warn('Database error while fetching flyers, falling back to local storage', flyerError);
@@ -285,7 +335,9 @@ export default function EnlaceIzcalliView({
       category: selectedFormCategory,
       creatorId,
       creatorName,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      whatsapp: flyerWhatsapp.trim() || undefined,
+      phone: flyerPhone.trim() || undefined
     };
 
     // Save locally first for robust fallback
@@ -317,7 +369,9 @@ export default function EnlaceIzcalliView({
           category_name: newFlyer.category,
           creator_id: newFlyer.creatorId,
           creator_name: newFlyer.creatorName,
-          created_at: newFlyer.createdAt
+          created_at: newFlyer.createdAt,
+          whatsapp: newFlyer.whatsapp || null,
+          phone: newFlyer.phone || null
         }]);
         if (!error) {
           dbSucceeded = true;
@@ -333,6 +387,8 @@ export default function EnlaceIzcalliView({
     // Reset form fields
     setFlyerTitle('');
     setFlyerImageData(null);
+    setFlyerWhatsapp('');
+    setFlyerPhone('');
     setActiveTab('gallery');
 
     if (dbSucceeded) {
@@ -634,6 +690,36 @@ export default function EnlaceIzcalliView({
                           Ver Mas Grande
                         </span>
                       </div>
+
+                      {/* Floating One-Click Quick Contacts */}
+                      {(flyer.whatsapp || flyer.phone) && (
+                        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-25 gap-2 pointer-events-none">
+                          <div className="flex gap-1.5 pointer-events-auto">
+                            {flyer.whatsapp && (
+                              <a
+                                href={formatWhatsAppUrl(flyer.whatsapp)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                                title={`WhatsApp: ${flyer.whatsapp}`}
+                              >
+                                <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
+                              </a>
+                            )}
+                            {flyer.phone && (
+                              <a
+                                href={`tel:${flyer.phone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                                title={`Llamar: ${flyer.phone}`}
+                              >
+                                <Phone className="w-4 h-4 fill-white text-indigo-500" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Flyer Title & Admin Operations */}
@@ -793,6 +879,59 @@ export default function EnlaceIzcalliView({
                 />
               </div>
 
+              {/* Extraction loading status or success indicator */}
+              {flyerImageData && (
+                <div className="space-y-2">
+                  {isExtractingContacts ? (
+                    <div className="flex items-center gap-3 p-3.5 bg-sky-50 text-sky-800 text-[10px] font-black uppercase tracking-wider rounded-2xl border border-sky-100 animate-pulse">
+                      <div className="w-4 h-4 border-2 border-sky-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                      <span>Analizando imagen con IA para extraer contactos...</span>
+                    </div>
+                  ) : (flyerWhatsapp || flyerPhone) ? (
+                    <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-2xl border border-emerald-100">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>¡Contactos extraídos y rellenados automáticamente con IA!</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-3.5 bg-amber-50/50 text-amber-800 text-[10px] font-black uppercase tracking-wider rounded-2xl border border-amber-100/50">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>Puedes guardar los contactos manualmente si la IA no los detectó en esta imagen.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* WhatsApp & Phone Number Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    WhatsApp del Negocio
+                  </label>
+                  <input 
+                    type="tel" 
+                    placeholder="Ej: 5512345678"
+                    value={flyerWhatsapp}
+                    onChange={e => setFlyerWhatsapp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-indigo-500" />
+                    Teléfono de Contacto
+                  </label>
+                  <input 
+                    type="tel" 
+                    placeholder="Ej: 5512345678"
+                    value={flyerPhone}
+                    onChange={e => setFlyerPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
+                  />
+                </div>
+              </div>
+
               {/* Category & Instant Category builder */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-2">
@@ -915,6 +1054,32 @@ export default function EnlaceIzcalliView({
                 <span className="text-white/40 text-[9px] font-bold uppercase tracking-widest mt-1">
                   Publicado por: {activeLightboxFlyer.creatorName}
                 </span>
+
+                {/* Direct tactile contact buttons for Lightbox */}
+                {(activeLightboxFlyer.whatsapp || activeLightboxFlyer.phone) && (
+                  <div className="flex flex-wrap gap-2 mt-3 select-none">
+                    {activeLightboxFlyer.whatsapp && (
+                      <a
+                        href={formatWhatsAppUrl(activeLightboxFlyer.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
+                        <span>Chat de WhatsApp</span>
+                      </a>
+                    )}
+                    {activeLightboxFlyer.phone && (
+                      <a
+                        href={`tel:${activeLightboxFlyer.phone}`}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      >
+                        <Phone className="w-4 h-4 fill-white text-indigo-500" />
+                        <span>Llamar por Teléfono</span>
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               
               <button 
