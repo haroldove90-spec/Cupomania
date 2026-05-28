@@ -4518,10 +4518,10 @@ export default function App() {
 
   const adminMetrics: AdminMetrics = {
     totalUsers: users.filter(u => u.role === 'usuario').length,
-    totalSponsors: users.filter(u => u.role === 'patrocinador').length,
+    totalSponsors: users.filter(u => u.role === 'patrocinador').length + totalFlyers,
     totalAdmins: users.filter(u => u.role === 'admin').length,
     totalCoupons: activeCoupons.length,
-    totalRevenue: users.filter(u => u.role === 'patrocinador').length * 500,
+    totalRevenue: (users.filter(u => u.role === 'patrocinador').length * 500) + (totalFlyers * 500),
     dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
     pageVisits: pageVisits,
     totalFlyers: totalFlyers
