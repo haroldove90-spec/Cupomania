@@ -57,7 +57,6 @@ export default function EnlaceIzcalliView({
   const [newCategoryName, setNewCategoryName] = useState('');
 
   // Form states for uploading flyer
-  const [flyerTitle, setFlyerTitle] = useState('');
   const [selectedFormCategory, setSelectedFormCategory] = useState(DEFAULT_CATEGORIES[0]);
   const [flyerImageData, setFlyerImageData] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -330,7 +329,7 @@ export default function EnlaceIzcalliView({
 
     const newFlyer: IzcalliFlyer = {
       id: crypto.randomUUID(),
-      title: flyerTitle.trim() || `Flyer de ${creatorName}`,
+      title: `Flyer (${selectedFormCategory}) - ${creatorName}`,
       imageUrl: flyerImageData,
       category: selectedFormCategory,
       creatorId,
@@ -385,7 +384,6 @@ export default function EnlaceIzcalliView({
 
     setIsSubmitting(false);
     // Reset form fields
-    setFlyerTitle('');
     setFlyerImageData(null);
     setFlyerWhatsapp('');
     setFlyerPhone('');
@@ -864,20 +862,7 @@ export default function EnlaceIzcalliView({
                 </div>
               </div>
 
-              {/* Title / Description */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest block">
-                  Título del Flyer o Promoción
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="Ej: Gran Inauguración, Descuento Fin de Año..."
-                  required
-                  value={flyerTitle}
-                  onChange={e => setFlyerTitle(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
-                />
-              </div>
+
 
               {/* Extraction loading status or success indicator */}
               {flyerImageData && (
