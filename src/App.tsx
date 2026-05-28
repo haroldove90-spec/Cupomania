@@ -4107,12 +4107,63 @@ export default function App() {
     try {
       const supabase = getSupabase();
       if (!supabase) return;
-      const { data, error } = await supabase.from('profiles').select('*');
+      
+      let { data, error } = await supabase.from('profiles').select('*');
       if (error) {
         console.error('Error fetching profiles from Supabase:', error.message);
         return;
       }
+
       if (data) {
+        // --- AUTO-MIGRACIÓN DE LOCALSTORAGE A SUPABASE ---
+        // Sincroniza perfiles guardados localmente para evitar pérdidas tras la integración de Supabase
+        try {
+          const localStr = localStorage.getItem('cuponmania_users_list');
+          if (localStr) {
+            const locals = JSON.parse(localStr);
+            if (Array.isArray(locals)) {
+              let migratedAny = false;
+              for (const localUser of locals) {
+                if (!localUser || !localUser.username || localUser.username === 'appdesign') continue;
+                
+                const existsInDb = data.some(p => p.username === localUser.username);
+                if (!existsInDb) {
+                  console.log('Migrando usuario local a Supabase:', localUser.username);
+                  const payload = {
+                    id: (localUser.id && localUser.id.includes('-')) ? localUser.id : crypto.randomUUID(),
+                    username: localUser.username,
+                    email: localUser.email,
+                    name: localUser.name,
+                    role: localUser.role || 'usuario',
+                    whatsapp: localUser.whatsapp,
+                    photo: localUser.photo,
+                    business_name: localUser.businessName,
+                    representative_name: localUser.representativeName,
+                    address: localUser.address,
+                    location_link: localUser.locationLink,
+                    website: localUser.website,
+                    services: Array.isArray(localUser.services) ? localUser.services : [],
+                    is_active: localUser.isActive !== false
+                  };
+                  const { error: upsertErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'username' });
+                  if (!upsertErr) {
+                    migratedAny = true;
+                  }
+                }
+              }
+              if (migratedAny) {
+                // Si migramos, refrescamos los datos actuales
+                const { data: freshData } = await supabase.from('profiles').select('*');
+                if (freshData) {
+                  data = freshData;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error during automatic offline users migration:', e);
+        }
+
         const formatted = data.map(p => {
           let servicesArray: string[] = [];
           if (Array.isArray(p.services)) {
