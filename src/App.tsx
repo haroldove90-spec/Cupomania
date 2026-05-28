@@ -4040,7 +4040,7 @@ export default function App() {
     setCurrentUser(null);
     localStorage.removeItem('cuponmania_user');
     localStorage.removeItem('cuponmania_view');
-    setActiveView(cuponmaniaEnabled ? 'marketplace' : 'landing');
+    setActiveView('enlace_izcalli');
     resetAllForms(null);
     showFeedback('Sesión cerrada correctamente');
   };
@@ -4300,15 +4300,15 @@ export default function App() {
     const savedRole = (localStorage.getItem('cuponmania_role') as UserRole) || 'usuario';
 
     if (savedView) {
-      if (!isConfigEnabled && savedRole !== 'admin' && savedRole !== 'patrocinador' && (savedView === 'marketplace' || savedView === 'wallet')) {
-        return 'landing';
+      if (!isConfigEnabled && savedRole !== 'admin' && savedRole !== 'patrocinador' && (savedView === 'marketplace' || savedView === 'wallet' || savedView === 'enlace_izcalli')) {
+        return 'enlace_izcalli';
       }
       return savedView;
     }
 
     if (savedRole === 'admin') return 'admin_dashboard';
     if (savedRole === 'patrocinador') return 'generator';
-    return isConfigEnabled ? 'marketplace' : 'landing';
+    return 'enlace_izcalli';
   });
 
   useEffect(() => {
@@ -4831,7 +4831,7 @@ export default function App() {
 
   const handleRoleChange = (role: UserRole) => {
     setCurrentRole(role);
-    if (role === 'usuario') setActiveView('wallet');
+    if (role === 'usuario') setActiveView('enlace_izcalli');
     else if (role === 'patrocinador') setActiveView('generator');
     else if (role === 'admin') setActiveView('admin_dashboard');
   };
@@ -5392,8 +5392,8 @@ export default function App() {
               
               {!currentUser ? (
                 <>
-                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
-                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
+                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
 
                   {cuponmaniaEnabled && (
@@ -5402,8 +5402,8 @@ export default function App() {
                     </button>
                   )}
 
-                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
-                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
                   </button>
                 </>
               ) : currentRole === 'admin' ? (
@@ -5425,6 +5425,26 @@ export default function App() {
                   </button>
                   <button onClick={() => setActiveView('coupon_counter')} className={navItemClasses('coupon_counter')}>
                      <QrCode className="w-5 h-5" /> <span>Contador</span>
+                  </button>
+                </>
+              ) : currentRole === 'usuario' ? (
+                <>
+                  <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  </button>
+
+                  {cuponmaniaEnabled && (
+                    <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                    </button>
+                  )}
+
+                  <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
+                     <Ticket className="w-5 h-5" /> <span>Mi Cuponera</span>
+                  </button>
+
+                  <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
+                     <Home className="w-5 h-5" /> <span>Página de Inicio</span>
                   </button>
                 </>
               ) : (
@@ -5987,7 +6007,7 @@ export default function App() {
         resetAllForms(userProfile);
         if (userProfile.role === 'admin') setActiveView('admin_dashboard');
         else if (userProfile.role === 'patrocinador') setActiveView('generator');
-        else setActiveView('wallet');
+        else setActiveView('enlace_izcalli');
         showFeedback(`Bienvenido, ${userProfile.name}`);
       }} 
       users={users} 
@@ -6292,9 +6312,9 @@ export default function App() {
         {/* Dynamic Navigation for Guest / Standard Registered User */}
         {(!currentUser || currentUser?.role === 'usuario') && (
           <>
-            <button onClick={() => setActiveView('landing')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'landing' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Home className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Inicio</span>
+            <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Izcalli</span>
             </button>
             {cuponmaniaEnabled && (
               <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
@@ -6302,9 +6322,9 @@ export default function App() {
                 <span className="text-[7px] font-black uppercase">Cupones</span>
               </button>
             )}
-            <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Megaphone className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Izcalli</span>
+            <button onClick={() => setActiveView('landing')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'landing' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Home className="w-5 h-5" />
+              <span className="text-[7px] font-black uppercase">Inicio</span>
             </button>
             {cuponmaniaEnabled && currentUser && (
               <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
