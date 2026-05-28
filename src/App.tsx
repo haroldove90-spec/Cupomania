@@ -124,6 +124,7 @@ const AdminMetricsView = ({ metrics }: { metrics: AdminMetrics }) => {
     { title: 'Patrocinadores', value: metrics.totalSponsors, icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-50' },
     { title: 'Administradores', value: metrics.totalAdmins, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
     { title: 'Cupones Creados', value: metrics.totalCoupons, icon: Ticket, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: 'Flyers (Patrocinadores)', value: metrics.totalFlyers || 0, icon: Megaphone, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { title: 'Activos Hoy', value: metrics.dailyActiveUsers, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
   ];
 
@@ -4348,7 +4349,10 @@ export default function App() {
           .eq('id', 'page_visits')
           .maybeSingle();
         
-        const newCount = (data?.count ? Number(data.count) : 0) + 1;
+        const rawCount = data?.count ? Number(data.count) : 0;
+        // Restauración de las 109 visitas perdidas por reset anterior
+        const baseCount = rawCount < 144 ? Math.max(rawCount + 109, 144) : rawCount;
+        const newCount = baseCount + 1;
         const { error: upsertError } = await supabase
           .from('app_metrics')
           .upsert({ id: 'page_visits', count: newCount, updated_at: new Date().toISOString() });
@@ -4367,7 +4371,18 @@ export default function App() {
           .select('count')
           .eq('id', 'page_visits')
           .maybeSingle();
-        if (data) setPageVisits(Number(data.count));
+        if (data) {
+          const rawCount = Number(data.count);
+          // Restauración de las 109 visitas perdidas
+          const correctedCount = rawCount < 144 ? Math.max(rawCount + 109, 144) : rawCount;
+          setPageVisits(correctedCount);
+
+          if (rawCount < 144) {
+            await supabase
+              .from('app_metrics')
+              .upsert({ id: 'page_visits', count: correctedCount, updated_at: new Date().toISOString() });
+          }
+        }
       }
     } catch (e) {
       console.error('Error recording visit:', e);
@@ -4447,11 +4462,14 @@ export default function App() {
   const [isRegisteringBusiness, setIsRegisteringBusiness] = useState(false);
   const [registrationBusinessError, setRegistrationBusinessError] = useState('');
   const [pageVisits, setPageVisits] = useState(0);
+  const [totalFlyers, setTotalFlyers] = useState(0);
 
   const fetchMetrics = useCallback(async () => {
     try {
       const supabase = getSupabase();
       if (!supabase) return;
+
+      // 1. Visitas
       const { data, error } = await supabase
         .from('app_metrics')
         .select('count')
@@ -4459,8 +4477,40 @@ export default function App() {
         .maybeSingle();
       
       if (!error && data) {
-        setPageVisits(Number(data.count));
+        const rawCount = Number(data.count);
+        // Recuperación de las 109 visitas históricas perdidas por reset anterior
+        const correctedCount = rawCount < 144 ? Math.max(rawCount + 109, 144) : rawCount;
+        setPageVisits(correctedCount);
+
+        if (rawCount < 144) {
+          await supabase
+            .from('app_metrics')
+            .upsert({ id: 'page_visits', count: correctedCount, updated_at: new Date().toISOString() });
+        }
       }
+
+      // 2. Conteo de flyers (Patrocinadores)
+      let dbFlyerCount = 0;
+      const { count: flyerCount, error: flyerError } = await supabase
+        .from('izcalli_flyers')
+        .select('*', { count: 'exact', head: true });
+      
+      if (!flyerError && flyerCount !== null) {
+        dbFlyerCount = flyerCount;
+      }
+
+      let finalFlyerCount = dbFlyerCount;
+      try {
+        const localFlyersStr = localStorage.getItem('izcalli_flyers_local');
+        if (localFlyersStr) {
+          const locals = JSON.parse(localFlyersStr);
+          if (Array.isArray(locals)) {
+            finalFlyerCount = Math.max(dbFlyerCount, locals.length);
+          }
+        }
+      } catch (_) {}
+
+      setTotalFlyers(finalFlyerCount);
     } catch (e) {
       console.error('Error fetching metrics:', e);
     }
@@ -4473,7 +4523,8 @@ export default function App() {
     totalCoupons: activeCoupons.length,
     totalRevenue: users.filter(u => u.role === 'patrocinador').length * 500,
     dailyActiveUsers: Math.floor(users.length * 0.4) + 1,
-    pageVisits: pageVisits
+    pageVisits: pageVisits,
+    totalFlyers: totalFlyers
   };
 
   useEffect(() => {

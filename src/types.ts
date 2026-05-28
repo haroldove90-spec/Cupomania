@@ -50,6 +50,7 @@ export interface AdminMetrics {
   totalRevenue: number;
   dailyActiveUsers: number;
   pageVisits: number;
+  totalFlyers?: number;
 }
 
 export interface CuponConfig {
