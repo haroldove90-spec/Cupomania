@@ -4227,7 +4227,13 @@ export default function App() {
           };
           
           // Actualizar estado local inmediatamente
-          setUsers(prev => prev.map(u => u.id === data.id ? freshProfile : u));
+          setUsers(prev => {
+            const hasUser = prev.some(u => u.id === data.id || u.username === data.username);
+            if (hasUser) {
+              return prev.map(u => (u.id === data.id || u.username === data.username) ? freshProfile : u);
+            }
+            return [...prev, freshProfile];
+          });
           return freshProfile;
         }
       return null;
@@ -4517,8 +4523,8 @@ export default function App() {
   }, []);
 
   const adminMetrics: AdminMetrics = {
-    totalUsers: users.filter(u => u.role === 'usuario').length,
-    totalSponsors: users.filter(u => u.role === 'patrocinador').length + totalFlyers,
+    totalUsers: users.filter(u => u.role === 'usuario' || (u.role !== 'admin' && u.role !== 'patrocinador')).length,
+    totalSponsors: users.filter(u => u.role === 'patrocinador').length + totalFlyers + activeCoupons.length,
     totalAdmins: users.filter(u => u.role === 'admin').length,
     totalCoupons: activeCoupons.length,
     totalRevenue: (users.filter(u => u.role === 'patrocinador').length * 500) + (totalFlyers * 500),
