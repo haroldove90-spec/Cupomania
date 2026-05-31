@@ -2791,11 +2791,13 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
           </div>
         </div>
       ) : zoneFilteredCoupons.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10 px-6 text-center">
-          <Ticket className="w-16 h-16 mb-4 opacity-40 text-primary" />
-          <p className="font-black uppercase tracking-widest text-xs text-black/60">No hay cupones actualmente para Cuponmanía {zoneFilter === 'tlalnepantla' ? 'Tlalnepantla' : 'Izcalli'}</p>
-          <p className="text-[10px] text-black/40 font-bold max-w-sm mt-3 uppercase tracking-widest leading-relaxed">
-            ¡Estamos preparando grandes beneficios con los comercios locales muy pronto!
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10 px-6 text-center shadow-sm py-12">
+          <Ticket className="w-16 h-16 mb-6 opacity-40 text-primary animate-bounce" />
+          <h3 className="font-black uppercase tracking-tighter text-lg md:text-xl text-black/80 mb-2">
+            Próximamente Cuponmanía {zoneFilter === 'tlalnepantla' ? 'Tlalnepantla' : 'Izcalli'}
+          </h3>
+          <p className="text-[11px] text-black/50 font-bold max-w-md uppercase tracking-wider leading-relaxed">
+            Espera muy pronto las promociones de la zona.
           </p>
         </div>
       ) : filteredCoupons.length === 0 ? (
