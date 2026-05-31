@@ -6280,7 +6280,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'enlace_izcalli' && activeView !== 'enlace_tlalnepantla') {
+  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'cuponmania_tlalnepantla' && activeView !== 'enlace_izcalli' && activeView !== 'enlace_tlalnepantla') {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}

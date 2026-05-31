@@ -750,12 +750,6 @@ export default function EnlaceIzcalliView({
             <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-emerald-300/80">
               Cartelera Digital Interactiva de Comercios y Flyers Publicitarios
             </p>
-            <div className="mt-3.5 flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl w-fit border border-white/10 shadow-inner">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-black uppercase tracking-widest text-emerald-300">
-                {filteredFlyersByEnlace.length} {filteredFlyersByEnlace.length === 1 ? 'Negocio ( Flyer )' : 'Negocios ( Flyer )'}
-              </span>
-            </div>
           </div>
 
           <div className="flex gap-2">
@@ -823,10 +817,10 @@ export default function EnlaceIzcalliView({
                   <Filter className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-black uppercase tracking-tight mb-2">
-                  Próximamente Cuponmanía {isTlalnepantla ? 'Tlalnepantla' : 'Izcalli'}
+                  Cartelera de Flyers Vacía en {enlaceShortName}
                 </h3>
                 <p className="text-xs text-black/40 uppercase font-bold tracking-widest max-w-sm mx-auto leading-relaxed font-sans mb-4">
-                  Espera muy pronto las promociones de la zona.
+                  Aún no se han publicado flyers publicitarios en {enlaceName} para la categoría "{selectedCategory}". Espera muy pronto las publicaciones de los comercios locales de la zona.
                 </p>
                 {canManage && (
                   <button 
