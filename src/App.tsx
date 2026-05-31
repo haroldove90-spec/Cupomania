@@ -3043,6 +3043,14 @@ const WalletView = ({
           });
         } catch (_) {}
       }
+
+      // Ensure all flyers are explicitly sorted descending by creation date, so new ones appear first
+      loadedFlyers.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
       setFlyers(loadedFlyers);
       setIsFetchingFlyers(false);
     };
