@@ -9,6 +9,7 @@ import {
   ZoomIn, 
   ZoomOut, 
   Trash2, 
+  Pencil,
   Tag, 
   Filter, 
   Calendar,
@@ -69,6 +70,14 @@ export default function EnlaceIzcalliView({
   const [flyerPhone, setFlyerPhone] = useState('');
   const [isExtractingContacts, setIsExtractingContacts] = useState(false);
   const [targetEnlace, setTargetEnlace] = useState<'izcalli' | 'tlalnepantla' | 'ambas'>(enlaceType);
+
+  // Form states for editing flyer Info
+  const [editingFlyer, setEditingFlyer] = useState<IzcalliFlyer | null>(null);
+  const [editPhone, setEditPhone] = useState('');
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editTargetEnlace, setEditTargetEnlace] = useState<'izcalli' | 'tlalnepantla' | 'ambas'>('izcalli');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setTargetEnlace(enlaceType);
@@ -485,6 +494,76 @@ export default function EnlaceIzcalliView({
     }
   };
 
+  // Start editing flyer details
+  const startEditingFlyer = (flyer: IzcalliFlyer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingFlyer(flyer);
+    setEditPhone(flyer.phone || '');
+    setEditWhatsapp(flyer.whatsapp || '');
+    setEditCategory(flyer.category || DEFAULT_CATEGORIES[0]);
+    setEditTargetEnlace(flyer.target_enlace || 'izcalli');
+  };
+
+  // Submit edit flyer details updates
+  const handleUpdateFlyerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFlyer) return;
+
+    setIsUpdating(true);
+    
+    const updatedFlyer: IzcalliFlyer = {
+      ...editingFlyer,
+      phone: editPhone.trim() || undefined,
+      whatsapp: editWhatsapp.trim() || undefined,
+      category: editCategory,
+      target_enlace: editTargetEnlace
+    };
+
+    // Update state locally
+    const updatedFlyers = flyers.map(f => f.id === editingFlyer.id ? updatedFlyer : f);
+    setFlyers(updatedFlyers);
+    
+    // Save updated to localStorage
+    try {
+      localStorage.setItem('izcalli_flyers_local', JSON.stringify(updatedFlyers));
+    } catch (err) {
+      console.warn('LocalStorage error during flyer update', err);
+    }
+
+    let dbSucceeded = false;
+    try {
+      const supabase = getSupabase();
+      if (supabase) {
+        const { error } = await supabase
+          .from('izcalli_flyers')
+          .update({
+            phone: updatedFlyer.phone || null,
+            whatsapp: updatedFlyer.whatsapp || null,
+            category_name: updatedFlyer.category,
+            target_enlace: updatedFlyer.target_enlace
+          })
+          .eq('id', editingFlyer.id);
+
+        if (!error) {
+          dbSucceeded = true;
+        } else {
+          console.warn('Supabase update error:', error);
+        }
+      }
+    } catch (err) {
+      console.warn('Database error during flyer update:', err);
+    }
+
+    setIsUpdating(false);
+    setEditingFlyer(null);
+
+    if (dbSucceeded) {
+      showFeedback('¡Flyer actualizado y sincronizado con éxito!');
+    } else {
+      showFeedback('Flyer actualizado localmente');
+    }
+  };
+
   // Lightbox mechanics for drag and zoom
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -832,13 +911,22 @@ export default function EnlaceIzcalliView({
                         </button>
 
                         {(currentUser?.role === 'admin' || (currentUser?.role === 'patrocinador' && currentUser.id === flyer.creatorId)) && (
-                          <button
-                            onClick={(e) => handleDeleteFlyer(flyer.id, e)}
-                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors"
-                            title="Eliminar Flyer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <>
+                            <button
+                              onClick={(e) => startEditingFlyer(flyer, e)}
+                              className="p-1.5 hover:bg-amber-50 rounded-lg text-amber-500 hover:text-amber-700 transition-colors"
+                              title="Editar Flyer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteFlyer(flyer.id, e)}
+                              className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors"
+                              title="Eliminar Flyer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1245,6 +1333,23 @@ export default function EnlaceIzcalliView({
                   <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Compartir</span>
                 </button>
 
+                {(currentUser?.role === 'admin' || (currentUser?.role === 'patrocinador' && currentUser.id === activeLightboxFlyer.creatorId)) && (
+                  <>
+                    <div className="w-[1px] h-4 bg-white/20" />
+                    <button 
+                      onClick={(e) => {
+                        startEditingFlyer(activeLightboxFlyer, e);
+                        setActiveLightboxFlyer(null);
+                      }}
+                      className="text-amber-400 hover:text-amber-300 transition-colors p-2 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      title="Editar Datos"
+                    >
+                      <Pencil className="w-5 h-5" />
+                      <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Editar</span>
+                    </button>
+                  </>
+                )}
+
                 <div className="w-[1px] h-4 bg-white/20" />
 
                 <button 
@@ -1257,6 +1362,134 @@ export default function EnlaceIzcalliView({
               </div>
             </div>
 
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* GORGEOUS IN-APP MODAL TO EDIT FLYER DETAILS */}
+      <AnimatePresence>
+        {editingFlyer && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 select-none"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border border-black/5"
+            >
+              {/* Header */}
+              <div className="p-6 bg-teal-950 text-white flex items-center justify-between border-b border-teal-900">
+                <div className="flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-amber-400" />
+                  <h3 className="font-black uppercase tracking-tight text-xs">Editar Datos de Flyer</h3>
+                </div>
+                <button 
+                  onClick={() => setEditingFlyer(null)}
+                  className="text-white/60 hover:text-white p-1 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleUpdateFlyerSubmit} className="p-6 space-y-4">
+                
+                {/* Contact phone */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-indigo-500" />
+                    Teléfono de Contacto
+                  </label>
+                  <input 
+                    type="tel" 
+                    placeholder="Ej: 5512345678"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
+                  />
+                </div>
+
+                {/* WhatsApp */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    WhatsApp del Negocio
+                  </label>
+                  <input 
+                    type="tel" 
+                    placeholder="Ej: 5512345678"
+                    value={editWhatsapp}
+                    onChange={e => setEditWhatsapp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
+                  />
+                </div>
+
+                {/* Category Selection */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest">
+                    Selecciona Categoría del Flyer
+                  </label>
+                  <select
+                    value={editCategory}
+                    onChange={e => setEditCategory(e.target.value)}
+                    className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500/20 outline-none"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Segmentación de Enlace (Destino) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-blue-500" />
+                    Segmentación de Enlace (Destino)
+                  </label>
+                  <select 
+                    value={editTargetEnlace} 
+                    onChange={e => setEditTargetEnlace(e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas')}
+                    className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none"
+                  >
+                    <option value="izcalli">Enlace Izcalli 🏙️</option>
+                    <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
+                    <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
+                  </select>
+                </div>
+
+                {/* Save and Cancel buttons */}
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingFlyer(null)}
+                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all h-11"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 py-3 bg-teal-950 text-amber-400 hover:bg-teal-900 border border-amber-400/20 shadow-lg text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50 h-11 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isUpdating ? (
+                      <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Guardar Cambios</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
