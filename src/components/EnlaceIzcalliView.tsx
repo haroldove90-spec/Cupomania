@@ -78,6 +78,8 @@ export default function EnlaceIzcalliView({
   const [editCategory, setEditCategory] = useState('');
   const [editTargetEnlace, setEditTargetEnlace] = useState<'izcalli' | 'tlalnepantla' | 'ambas'>('izcalli');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showEditAddCategory, setShowEditAddCategory] = useState(false);
+  const [editNewCategoryName, setEditNewCategoryName] = useState('');
 
   useEffect(() => {
     setTargetEnlace(enlaceType);
@@ -502,6 +504,44 @@ export default function EnlaceIzcalliView({
     setEditWhatsapp(flyer.whatsapp || '');
     setEditCategory(flyer.category || DEFAULT_CATEGORIES[0]);
     setEditTargetEnlace(flyer.target_enlace || 'izcalli');
+    setShowEditAddCategory(false);
+    setEditNewCategoryName('');
+  };
+
+  // Safe save handler for adding custom category on-the-fly when editing
+  const handleEditAddCategory = async (e: React.MouseEvent | React.FormEvent) => {
+    e.preventDefault();
+    const normalized = editNewCategoryName.trim();
+    if (!normalized) return;
+
+    if (categories.some(c => c.toLowerCase() === normalized.toLowerCase())) {
+      showFeedback('La categoría ya está registrada', 'error');
+      const match = categories.find(c => c.toLowerCase() === normalized.toLowerCase()) || normalized;
+      setEditCategory(match);
+      setShowEditAddCategory(false);
+      setEditNewCategoryName('');
+      return;
+    }
+
+    const updatedCats = Array.from(new Set([...categories, normalized]));
+    setCategories(updatedCats);
+    localStorage.setItem('izcalli_categories_local', JSON.stringify(updatedCats.filter(c => !DEFAULT_CATEGORIES.includes(c))));
+    
+    // Select the newly created category instantly
+    setEditCategory(normalized);
+    setEditNewCategoryName('');
+    setShowEditAddCategory(false);
+    showFeedback(`Categoría "${normalized}" registrada al instante`, 'success');
+
+    // Attempt Supabase insert in background
+    try {
+      const supabase = getSupabase();
+      if (supabase) {
+        await supabase.from('izcalli_categories').insert([{ name: normalized }]);
+      }
+    } catch (err) {
+      console.warn('Silent database write error for category:', err);
+    }
   };
 
   // Submit edit flyer details updates
@@ -1430,20 +1470,57 @@ export default function EnlaceIzcalliView({
 
                 {/* Category Selection */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest">
-                    Selecciona Categoría del Flyer
-                  </label>
-                  <select
-                    value={editCategory}
-                    onChange={e => setEditCategory(e.target.value)}
-                    className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500/20 outline-none"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black uppercase text-black/40 px-1 tracking-widest">
+                      Selecciona Categoría del Flyer
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowEditAddCategory(!showEditAddCategory)}
+                      className="text-[10px] font-black text-teal-600 hover:text-teal-800 transition-colors uppercase tracking-widest cursor-pointer flex items-center gap-1 select-none"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>{showEditAddCategory ? 'Elegir Existente' : 'Nueva Categoría'}</span>
+                    </button>
+                  </div>
+
+                  {!showEditAddCategory ? (
+                    <select
+                      value={editCategory}
+                      onChange={e => setEditCategory(e.target.value)}
+                      className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500/20 outline-none"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ej: Mascotas"
+                        value={editNewCategoryName}
+                        onChange={e => setEditNewCategoryName(e.target.value)}
+                        className="flex-1 bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none placeholder:text-gray-300"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleEditAddCategory(e);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleEditAddCategory}
+                        className="bg-teal-950 text-amber-400 font-black text-[10px] uppercase tracking-widest px-4 rounded-xl border border-amber-400/20 hover:bg-teal-900 transition-all cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Segmentación de Enlace (Destino) */}
