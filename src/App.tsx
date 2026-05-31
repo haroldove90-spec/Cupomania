@@ -4657,28 +4657,34 @@ export default function App() {
         }
       }
 
-      // 2. Conteo de flyers (Patrocinadores)
-      let dbFlyerCount = 0;
-      const { count: flyerCount, error: flyerError } = await supabase
-        .from('izcalli_flyers')
-        .select('*', { count: 'exact', head: true });
+      // 2. Conteo de flyers (Patrocinadores) - Obtenemos la unión exacta de base de datos y local
+      const uniqueFlyerIds = new Set<string>();
       
-      if (!flyerError && flyerCount !== null) {
-        dbFlyerCount = flyerCount;
+      const { data: dbFlyers, error: flyerError } = await supabase
+        .from('izcalli_flyers')
+        .select('id');
+      
+      if (!flyerError && dbFlyers) {
+        dbFlyers.forEach(f => {
+          if (f && f.id) uniqueFlyerIds.add(f.id);
+        });
       }
 
-      let finalFlyerCount = dbFlyerCount;
       try {
         const localFlyersStr = localStorage.getItem('izcalli_flyers_local');
         if (localFlyersStr) {
           const locals = JSON.parse(localFlyersStr);
           if (Array.isArray(locals)) {
-            finalFlyerCount = Math.max(dbFlyerCount, locals.length);
+            locals.forEach((lf: any) => {
+              if (lf && lf.id) {
+                uniqueFlyerIds.add(lf.id);
+              }
+            });
           }
         }
       } catch (_) {}
 
-      setTotalFlyers(finalFlyerCount);
+      setTotalFlyers(uniqueFlyerIds.size);
     } catch (e) {
       console.error('Error fetching metrics:', e);
     }
