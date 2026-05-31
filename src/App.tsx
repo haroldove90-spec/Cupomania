@@ -69,7 +69,8 @@ import {
   Home,
   Globe,
   Bookmark,
-  HelpCircle
+  HelpCircle,
+  Filter
 } from 'lucide-react';
 import { generateCoupon } from './services/geminiService';
 import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption, IzcalliFlyer } from './types';
@@ -2583,6 +2584,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   showFeedback?: (msg: string, type?: 'success' | 'error') => void;
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [selectedEnlaceFilter, setSelectedEnlaceFilter] = useState<'todos' | 'izcalli' | 'tlalnepantla'>('todos');
 
   const [showTour, setShowTour] = useState<boolean>(() => {
     return localStorage.getItem('cuponmania_marketplace_tour_shown') !== 'true';
@@ -2645,12 +2647,23 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
     [coupons]
   );
   
-  const filteredCoupons = useMemo(() => 
-    selectedCategory === 'Todos' 
-      ? coupons 
-      : coupons.filter(c => normalizeCategory(c.data.categoria) === selectedCategory),
-    [coupons, selectedCategory]
-  );
+  const filteredCoupons = useMemo(() => {
+    let result = coupons;
+    if (selectedCategory !== 'Todos') {
+      result = result.filter(c => normalizeCategory(c.data.categoria) === selectedCategory);
+    }
+    if (selectedEnlaceFilter !== 'todos') {
+      result = result.filter(c => {
+        const target = c.target_enlace || 'izcalli';
+        if (selectedEnlaceFilter === 'izcalli') {
+          return target === 'izcalli' || target === 'ambas';
+        } else {
+          return target === 'tlalnepantla' || target === 'ambas';
+        }
+      });
+    }
+    return result;
+  }, [coupons, selectedCategory, selectedEnlaceFilter]);
 
   return (
     <div className="w-full h-full min-h-screen overflow-x-hidden pb-40 bg-gray-50/50">
@@ -2698,6 +2711,44 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
               {cat}
             </button>
           ))}
+        </div>
+
+        {/* Enlace Target Filter */}
+        <div className="flex flex-wrap items-center gap-3 mt-6 border-t border-black/5 pt-6">
+          <span className="text-[10px] font-black uppercase text-black/40 tracking-wider mr-2">Filtrar por Municipio/Enlace:</span>
+          <button 
+            type="button"
+            onClick={() => setSelectedEnlaceFilter('todos')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+              selectedEnlaceFilter === 'todos' 
+                ? 'bg-secondary text-white border-secondary shadow-md' 
+                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+            }`}
+          >
+            Todos 🌍
+          </button>
+          <button 
+            type="button"
+            onClick={() => setSelectedEnlaceFilter('izcalli')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+              selectedEnlaceFilter === 'izcalli' 
+                ? 'bg-secondary text-white border-secondary shadow-md' 
+                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+            }`}
+          >
+            Enlace Izcalli 🏙️
+          </button>
+          <button 
+            type="button"
+            onClick={() => setSelectedEnlaceFilter('tlalnepantla')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+              selectedEnlaceFilter === 'tlalnepantla' 
+                ? 'bg-secondary text-white border-secondary shadow-md' 
+                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+            }`}
+          >
+            Enlace Tlalnepantla 🏘️
+          </button>
         </div>
       </div>
 
@@ -4633,7 +4684,8 @@ export default function App() {
     fecha_inicio: new Date().toISOString().split('T')[0],
     fecha_fin: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     logo_data: '',
-    website: ''
+    website: '',
+    target_enlace: 'izcalli'
   });
 
   // Auto-sync generator form with sponsor profile
@@ -4651,7 +4703,8 @@ export default function App() {
           fecha_inicio: new Date().toISOString().split('T')[0],
           fecha_fin: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           logo_data: currentUser.photo || '',
-          website: currentUser.website || ''
+          website: currentUser.website || '',
+          target_enlace: 'izcalli'
         });
       }
     }
@@ -4690,6 +4743,7 @@ export default function App() {
           creatorId: dbCoupon.creator_id,
           imageData: dbCoupon.image_data,
           status: dbCoupon.status,
+          target_enlace: dbCoupon.target_enlace || 'izcalli',
           data: {
             header: { nombre_negocio: dbCoupon.nombre_negocio, logo_url: dbCoupon.logo_url },
             oferta: { texto: dbCoupon.oferta_texto, size: 'hero' },
@@ -5082,7 +5136,8 @@ export default function App() {
         timestamp_final: coupon.data.cronometro.timestamp_final,
         creator_id: finalUserId,
         is_published: isPublic,
-        image_data: imageData
+        image_data: imageData,
+        target_enlace: formData.target_enlace || 'izcalli'
       }]);
 
       if (error) {
@@ -5394,6 +5449,25 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Target Enlace Selector for Admin and Patrocinador */}
+            {(currentUser?.role === 'admin' || currentUser?.role === 'patrocinador') && (
+              <div className="space-y-2">
+                <label className="text-[11px] uppercase text-black/50 tracking-[0.1em] font-black flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-primary" /> Segmentación de Cupón (Destino)
+                </label>
+                <select 
+                  value={formData.target_enlace || 'izcalli'} 
+                  onChange={e => setFormData({...formData, target_enlace: e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas'})}
+                  className="w-full bg-gray-50 border border-black/5 rounded-2xl p-4 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                >
+                  <option value="izcalli">Enlace Izcalli 🏙️</option>
+                  <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
+                  <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
+                </select>
+              </div>
+            )}
+
           </div>
         </div>
         
@@ -5452,6 +5526,9 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
+                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
+                  </button>
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
@@ -5474,6 +5551,9 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
+                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
+                  </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
                      <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
@@ -5488,6 +5568,9 @@ export default function App() {
                 <>
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  </button>
+                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
                   </button>
 
                   {cuponmaniaEnabled && (
@@ -5518,6 +5601,9 @@ export default function App() {
 
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
+                  </button>
+                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
+                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
                   </button>
 
                   <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
@@ -6045,6 +6131,19 @@ export default function App() {
             likedFlyerIds={likedFlyerIds}
             onToggleSaveFlyer={handleToggleSaveFlyer}
             onToggleLikeFlyer={handleToggleLikeFlyer}
+            enlaceType="izcalli"
+          />
+        );
+      case 'enlace_tlalnepantla':
+        return (
+          <EnlaceIzcalliView 
+            currentUser={currentUser} 
+            showFeedback={showFeedback} 
+            savedFlyerIds={savedFlyerIds}
+            likedFlyerIds={likedFlyerIds}
+            onToggleSaveFlyer={handleToggleSaveFlyer}
+            onToggleLikeFlyer={handleToggleLikeFlyer}
+            enlaceType="tlalnepantla"
           />
         );
       case 'privacy':
@@ -6052,7 +6151,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'enlace_izcalli') {
+  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'enlace_izcalli' && activeView !== 'enlace_tlalnepantla') {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}

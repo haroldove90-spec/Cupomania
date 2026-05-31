@@ -31,6 +31,7 @@ interface EnlaceIzcalliViewProps {
   likedFlyerIds: string[];
   onToggleSaveFlyer: (flyerId: string) => void;
   onToggleLikeFlyer: (flyerId: string) => void;
+  enlaceType?: 'izcalli' | 'tlalnepantla';
 }
 
 const DEFAULT_CATEGORIES = ['Comida', 'Servicios', 'Entretenimiento', 'Deportes', 'Educación', 'Salud', 'Hogar', 'Moda'];
@@ -41,7 +42,8 @@ export default function EnlaceIzcalliView({
   savedFlyerIds = [],
   likedFlyerIds = [],
   onToggleSaveFlyer,
-  onToggleLikeFlyer
+  onToggleLikeFlyer,
+  enlaceType = 'izcalli'
 }: EnlaceIzcalliViewProps) {
   // Navigation states
   const [activeTab, setActiveTab] = useState<'gallery' | 'manage'>('gallery');
@@ -66,6 +68,26 @@ export default function EnlaceIzcalliView({
   const [flyerWhatsapp, setFlyerWhatsapp] = useState('');
   const [flyerPhone, setFlyerPhone] = useState('');
   const [isExtractingContacts, setIsExtractingContacts] = useState(false);
+  const [targetEnlace, setTargetEnlace] = useState<'izcalli' | 'tlalnepantla' | 'ambas'>(enlaceType);
+
+  useEffect(() => {
+    setTargetEnlace(enlaceType);
+  }, [enlaceType]);
+
+  const isTlalnepantla = enlaceType === 'tlalnepantla';
+  const enlaceName = isTlalnepantla ? 'Enlace Tlalnepantla' : 'Enlace Izcalli';
+  const enlaceShortName = isTlalnepantla ? 'Tlalnepantla' : 'Izcalli';
+
+  // Filter flyers by current Enlace section
+  const filteredFlyersByEnlace = React.useMemo(() => {
+    return flyers.filter(f => {
+      const target = f.target_enlace || 'izcalli';
+      if (isTlalnepantla) {
+        return target === 'tlalnepantla' || target === 'ambas';
+      }
+      return target === 'izcalli' || target === 'ambas';
+    });
+  }, [flyers, isTlalnepantla]);
 
   // Lightbox view states for deep zoom, pan, and rotate
   const [activeLightboxFlyer, setActiveLightboxFlyer] = useState<IzcalliFlyer | null>(null);
@@ -93,8 +115,8 @@ export default function EnlaceIzcalliView({
 
   // Dynamically filter categories to only show those that have at least one flyer
   const activeCategories = React.useMemo(() => {
-    return categories.filter(cat => flyers.some(f => f.category === cat));
-  }, [categories, flyers]);
+    return categories.filter(cat => filteredFlyersByEnlace.some(f => f.category === cat));
+  }, [categories, filteredFlyersByEnlace]);
 
   // Cleanly auto-reset the selected category filter to 'Todos' if its active status disappears (e.g. after flyer deletion)
   useEffect(() => {
@@ -176,7 +198,8 @@ export default function EnlaceIzcalliView({
             creatorName: f.creator_name || 'Anónimo',
             createdAt: f.created_at,
             whatsapp: f.whatsapp || '',
-            phone: f.phone || ''
+            phone: f.phone || '',
+            target_enlace: f.target_enlace || 'izcalli'
           }));
         } else if (flyerError) {
           console.warn('Database error while fetching flyers, falling back to local storage', flyerError);
@@ -336,7 +359,8 @@ export default function EnlaceIzcalliView({
       creatorName,
       createdAt: new Date().toISOString(),
       whatsapp: flyerWhatsapp.trim() || undefined,
-      phone: flyerPhone.trim() || undefined
+      phone: flyerPhone.trim() || undefined,
+      target_enlace: targetEnlace
     };
 
     // Save locally first for robust fallback
@@ -370,7 +394,8 @@ export default function EnlaceIzcalliView({
           creator_name: newFlyer.creatorName,
           created_at: newFlyer.createdAt,
           whatsapp: newFlyer.whatsapp || null,
-          phone: newFlyer.phone || null
+          phone: newFlyer.phone || null,
+          target_enlace: targetEnlace
         }]);
         if (!error) {
           dbSucceeded = true;
@@ -548,8 +573,8 @@ export default function EnlaceIzcalliView({
   };
 
   const filteredFlyers = selectedCategory === 'Todos' 
-    ? flyers 
-    : flyers.filter(f => f.category === selectedCategory);
+    ? filteredFlyersByEnlace 
+    : filteredFlyersByEnlace.filter(f => f.category === selectedCategory);
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'patrocinador';
 
@@ -564,7 +589,7 @@ export default function EnlaceIzcalliView({
               Módulo Oficial
             </span>
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none mb-2">
-              Enlace Izcalli
+              {enlaceName}
             </h1>
             <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-emerald-300/80">
               Cartelera Digital Interactiva de Comercios y Flyers Publicitarios
@@ -986,6 +1011,25 @@ export default function EnlaceIzcalliView({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Target Enlace Selection */}
+              {(currentUser?.role === 'admin' || currentUser?.role === 'patrocinador') && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-blue-500" />
+                    Segmentación de Enlace (Destino)
+                  </label>
+                  <select 
+                    value={targetEnlace} 
+                    onChange={e => setTargetEnlace(e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas')}
+                    className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none"
+                  >
+                    <option value="izcalli">Enlace Izcalli 🏙️</option>
+                    <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
+                    <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
+                  </select>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="pt-4 flex gap-3">

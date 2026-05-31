@@ -4,7 +4,7 @@
  */
 
 export type UserRole = 'admin' | 'patrocinador' | 'usuario';
-export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter' | 'privacy' | 'enlace_izcalli';
+export type AppView = 'landing' | 'generator' | 'marketplace' | 'wallet' | 'profile' | 'admin_dashboard' | 'business_registration' | 'admin_users' | 'login' | 'register' | 'notifications' | 'admin_flyer' | 'coupon_counter' | 'privacy' | 'enlace_izcalli' | 'enlace_tlalnepantla';
 
 export interface CouponRedemption {
   id: string;
@@ -60,6 +60,7 @@ export interface CuponConfig {
   creatorId?: string;
   imageData?: string;
   savedBy?: string[];
+  target_enlace?: 'izcalli' | 'tlalnepantla' | 'ambas';
   status: "success";
   data: {
     header: {
@@ -115,6 +116,7 @@ export interface BusinessData {
   fecha_fin?: string;
   logo_data?: string;
   website?: string;
+  target_enlace?: 'izcalli' | 'tlalnepantla' | 'ambas';
 }
 
 export interface IzcalliFlyer {
@@ -127,5 +129,6 @@ export interface IzcalliFlyer {
   createdAt: string;
   whatsapp?: string;
   phone?: string;
+  target_enlace?: 'izcalli' | 'tlalnepantla' | 'ambas';
 }
 

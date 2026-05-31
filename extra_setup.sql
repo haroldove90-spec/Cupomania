@@ -55,3 +55,43 @@ CREATE TABLE IF NOT EXISTS public.izcalli_flyers (
 ALTER TABLE public.izcalli_flyers ADD COLUMN IF NOT EXISTS whatsapp TEXT;
 ALTER TABLE public.izcalli_flyers ADD COLUMN IF NOT EXISTS phone TEXT;
 
+-- 5. Crear tabla de categorías para flyers si no existe
+CREATE TABLE IF NOT EXISTS public.izcalli_categories (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 6. Agregar columnas para la segmentación de Enlace (Izcalli, Tlalnepantla o Ambas)
+ALTER TABLE public.coupons ADD COLUMN IF NOT EXISTS target_enlace TEXT DEFAULT 'izcalli';
+ALTER TABLE public.izcalli_flyers ADD COLUMN IF NOT EXISTS target_enlace TEXT DEFAULT 'izcalli';
+
+-- 7. Habilitar RLS y Políticas Permisivas para que se guarden y carguen correctamente en el frontend
+ALTER TABLE public.izcalli_flyers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.izcalli_categories ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN
+    DROP POLICY IF EXISTS "Todos pueden ver flyers" ON public.izcalli_flyers;
+    CREATE POLICY "Todos pueden ver flyers" ON public.izcalli_flyers FOR SELECT USING (true);
+
+    DROP POLICY IF EXISTS "Insercion libre de flyers" ON public.izcalli_flyers;
+    CREATE POLICY "Insercion libre de flyers" ON public.izcalli_flyers FOR INSERT WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Actualizacion de flyers" ON public.izcalli_flyers;
+    CREATE POLICY "Actualizacion de flyers" ON public.izcalli_flyers FOR UPDATE USING (true);
+
+    DROP POLICY IF EXISTS "Borrado libre de flyers" ON public.izcalli_flyers;
+    CREATE POLICY "Borrado libre de flyers" ON public.izcalli_flyers FOR DELETE USING (true);
+
+    -- Políticas para categories
+    DROP POLICY IF EXISTS "Todos pueden ver categorias" ON public.izcalli_categories;
+    CREATE POLICY "Todos pueden ver categorias" ON public.izcalli_categories FOR SELECT USING (true);
+
+    DROP POLICY IF EXISTS "Insercion libre de categorias" ON public.izcalli_categories;
+    CREATE POLICY "Insercion libre de categorias" ON public.izcalli_categories FOR INSERT WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Borrado libre de categorias" ON public.izcalli_categories;
+    CREATE POLICY "Borrado libre de categorias" ON public.izcalli_categories FOR DELETE USING (true);
+END $$;
+
