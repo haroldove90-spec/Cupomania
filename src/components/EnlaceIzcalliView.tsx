@@ -221,18 +221,29 @@ export default function EnlaceIzcalliView({
           .order('created_at', { ascending: false });
 
         if (!flyerError && dbFlyers) {
-          loadedFlyers = dbFlyers.map(f => ({
-            id: f.id,
-            title: f.title || '',
-            imageUrl: f.image_url,
-            category: f.category_name,
-            creatorId: f.creator_id,
-            creatorName: f.creator_name || 'Anónimo',
-            createdAt: f.created_at,
-            whatsapp: f.whatsapp || '',
-            phone: f.phone || '',
-            target_enlace: f.target_enlace || 'izcalli'
-          }));
+          loadedFlyers = dbFlyers.map(f => {
+            let whatsapp = f.whatsapp || '';
+            let phone = '';
+            if (whatsapp.includes('||phone:')) {
+              const parts = whatsapp.split('||phone:');
+              whatsapp = parts[0];
+              phone = parts[1] || '';
+            } else {
+              phone = f.phone || '';
+            }
+            return {
+              id: f.id,
+              title: f.title || '',
+              imageUrl: f.image_url,
+              category: f.category_name,
+              creatorId: f.creator_id,
+              creatorName: f.creator_name || 'Anónimo',
+              createdAt: f.created_at,
+              whatsapp: whatsapp,
+              phone: phone,
+              target_enlace: f.target_enlace || 'izcalli'
+            };
+          });
         } else if (flyerError) {
           console.warn('Database error while fetching flyers, relying on local storage fallback', flyerError);
         }
@@ -436,6 +447,7 @@ export default function EnlaceIzcalliView({
     try {
       const supabase = getSupabase();
       if (supabase) {
+        const dbWhatsapp = ((newFlyer.whatsapp || '') + (newFlyer.phone ? `||phone:${newFlyer.phone}` : '')) || null;
         const { error } = await supabase.from('izcalli_flyers').insert([{
           id: newFlyer.id,
           title: newFlyer.title,
@@ -444,8 +456,7 @@ export default function EnlaceIzcalliView({
           creator_id: newFlyer.creatorId,
           creator_name: newFlyer.creatorName,
           created_at: newFlyer.createdAt,
-          whatsapp: newFlyer.whatsapp || null,
-          phone: newFlyer.phone || null,
+          whatsapp: dbWhatsapp,
           target_enlace: targetEnlace
         }]);
         if (!error) {
@@ -584,11 +595,11 @@ export default function EnlaceIzcalliView({
     try {
       const supabase = getSupabase();
       if (supabase) {
+        const dbWhatsapp = ((updatedFlyer.whatsapp || '') + (updatedFlyer.phone ? `||phone:${updatedFlyer.phone}` : '')) || null;
         const { error } = await supabase
           .from('izcalli_flyers')
           .update({
-            phone: updatedFlyer.phone || null,
-            whatsapp: updatedFlyer.whatsapp || null,
+            whatsapp: dbWhatsapp,
             category_name: updatedFlyer.category,
             target_enlace: updatedFlyer.target_enlace
           })

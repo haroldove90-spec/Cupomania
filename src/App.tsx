@@ -3116,18 +3116,29 @@ const WalletView = ({
             .select('*')
             .order('created_at', { ascending: false });
           if (!error && dbFlyers) {
-            loadedFlyers = dbFlyers.map(f => ({
-              id: f.id,
-              title: f.title || '',
-              imageUrl: f.image_url,
-              category: f.category_name,
-              creatorId: f.creator_id,
-              creatorName: f.creator_name || 'Anónimo',
-              createdAt: f.created_at,
-              whatsapp: f.whatsapp || '',
-              phone: f.phone || '',
-              target_enlace: f.target_enlace || 'izcalli'
-            }));
+            loadedFlyers = dbFlyers.map(f => {
+              let whatsapp = f.whatsapp || '';
+              let phone = '';
+              if (whatsapp.includes('||phone:')) {
+                const parts = whatsapp.split('||phone:');
+                whatsapp = parts[0];
+                phone = parts[1] || '';
+              } else {
+                phone = f.phone || '';
+              }
+              return {
+                id: f.id,
+                title: f.title || '',
+                imageUrl: f.image_url,
+                category: f.category_name,
+                creatorId: f.creator_id,
+                creatorName: f.creator_name || 'Anónimo',
+                createdAt: f.created_at,
+                whatsapp: whatsapp,
+                phone: phone,
+                target_enlace: f.target_enlace || 'izcalli'
+              };
+            });
           }
         }
       } catch (err) {
