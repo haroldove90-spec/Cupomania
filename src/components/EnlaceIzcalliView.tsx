@@ -898,75 +898,79 @@ export default function EnlaceIzcalliView({
                     </div>
 
                     {/* Flyer Title & Admin Operations */}
-                    <div className="p-3 bg-white flex items-center justify-between gap-2 border-t border-black/5 shrink-0">
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-[10px] font-black uppercase tracking-tight text-gray-800 truncate leading-none">
-                          {flyer.title}
-                        </h4>
-                        <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-1 leading-none">
-                          {new Date(flyer.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                        </span>
+                    <div className="p-3 bg-white flex flex-col gap-2 border-t border-black/5 shrink-0">
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-[10px] font-black uppercase tracking-tight text-gray-800 truncate leading-none">
+                            {flyer.title}
+                          </h4>
+                          <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-1 leading-none">
+                            {new Date(flyer.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex gap-1 items-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleLikeFlyer(flyer.id);
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            likedFlyerIds.includes(flyer.id) 
-                              ? 'bg-red-50 text-red-500' 
-                              : 'hover:bg-neutral-100 text-gray-400 hover:text-red-500'
-                          }`}
-                          title="Me gusta"
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${likedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
-                        </button>
+                      <div className="flex items-center justify-between border-t border-gray-50 pt-1.5 gap-1">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleLikeFlyer(flyer.id);
+                            }}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              likedFlyerIds.includes(flyer.id) 
+                                ? 'bg-red-50 text-red-500' 
+                                : 'hover:bg-neutral-100 text-gray-400 hover:text-red-500'
+                            }`}
+                            title="Me gusta"
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${likedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
+                          </button>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleSaveFlyer(flyer.id);
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            savedFlyerIds.includes(flyer.id) 
-                              ? 'bg-teal-50 text-teal-600' 
-                              : 'hover:bg-neutral-100 text-gray-400 hover:text-teal-600'
-                          }`}
-                          title="Guardar en Cuponera"
-                        >
-                          <Bookmark className={`w-3.5 h-3.5 ${savedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
-                        </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleSaveFlyer(flyer.id);
+                            }}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              savedFlyerIds.includes(flyer.id) 
+                                ? 'bg-teal-50 text-teal-600' 
+                                : 'hover:bg-neutral-100 text-gray-400 hover:text-teal-600'
+                            }`}
+                            title="Guardar en Cuponera"
+                          >
+                            <Bookmark className={`w-3.5 h-3.5 ${savedFlyerIds.includes(flyer.id) ? 'fill-current' : ''}`} />
+                          </button>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleShareFlyer(flyer, e);
-                          }}
-                          className="p-1.5 hover:bg-neutral-100 rounded-lg text-gray-500 hover:text-teal-600 transition-colors"
-                          title="Compartir"
-                        >
-                          <Share2 className="w-3.5 h-3.5" />
-                        </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShareFlyer(flyer, e);
+                            }}
+                            className="p-1.5 hover:bg-neutral-100 rounded-lg text-gray-500 hover:text-teal-600 transition-colors"
+                            title="Compartir"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
 
                         {(currentUser?.role === 'admin' || (currentUser?.role === 'patrocinador' && currentUser.id === flyer.creatorId)) && (
-                          <>
+                          <div className="flex items-center gap-1">
                             <button
                               onClick={(e) => startEditingFlyer(flyer, e)}
-                              className="p-1.5 hover:bg-amber-50 rounded-lg text-amber-500 hover:text-amber-700 transition-colors"
+                              className="p-1.5 hover:bg-amber-100 rounded-lg text-amber-500 hover:text-amber-700 transition-colors bg-amber-50"
                               title="Editar Flyer"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={(e) => handleDeleteFlyer(flyer.id, e)}
-                              className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors"
+                              className="p-1.5 hover:bg-red-100 rounded-lg text-red-400 hover:text-red-600 transition-colors bg-red-50"
                               title="Eliminar Flyer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>

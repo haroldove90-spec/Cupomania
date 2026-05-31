@@ -2568,7 +2568,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
 });
 
 
-const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading, isAdmin, onDelete, showFeedback }: { 
+const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFlyer, flyerLink, users, onShowSponsor, isLoading, isAdmin, onDelete, showFeedback, zoneFilter }: { 
   coupons: CuponConfig[]; 
   savedIds: string[]; 
   likedIds: string[];
@@ -2582,6 +2582,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   isAdmin?: boolean;
   onDelete?: (id: string) => void;
   showFeedback?: (msg: string, type?: 'success' | 'error') => void;
+  zoneFilter?: 'izcalli' | 'tlalnepantla';
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [selectedEnlaceFilter, setSelectedEnlaceFilter] = useState<'todos' | 'izcalli' | 'tlalnepantla'>('todos');
@@ -2594,7 +2595,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   const tourSteps = [
     {
       title: "¡Te damos la bienvenida al Marketplace! 🎫",
-      subtitle: "Descubre promociones de impacto en Izcalli",
+      subtitle: zoneFilter === 'tlalnepantla' ? "Descubre promociones de impacto en Tlalnepantla" : "Descubre promociones de impacto en Izcalli",
       content: "Aquí encontrarás una selección curada de cupones y ofertas exclusivas de patrocinadores y comercios locales. El acceso es totalmente público y transparente.",
       icon: <Ticket className="w-12 h-12 text-[#008F9A] animate-pulse" />,
       color: "from-teal-500/10 to-emerald-500/10 text-teal-600"
@@ -2642,17 +2643,29 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
     if (showFeedback) showFeedback('¡Excelente! Ahora estás listo para usar tus cupones.', 'success');
   };
 
+  const zoneFilteredCoupons = useMemo(() => {
+    if (!zoneFilter) return coupons;
+    return coupons.filter(c => {
+      const target = c.target_enlace || 'izcalli';
+      if (zoneFilter === 'izcalli') {
+        return target === 'izcalli' || target === 'ambas';
+      } else {
+        return target === 'tlalnepantla' || target === 'ambas';
+      }
+    });
+  }, [coupons, zoneFilter]);
+
   const categories = useMemo(() => 
-    ['Todos', ...Array.from(new Set(coupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean),
-    [coupons]
+    ['Todos', ...Array.from(new Set(zoneFilteredCoupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean),
+    [zoneFilteredCoupons]
   );
   
   const filteredCoupons = useMemo(() => {
-    let result = coupons;
+    let result = zoneFilteredCoupons;
     if (selectedCategory !== 'Todos') {
       result = result.filter(c => normalizeCategory(c.data.categoria) === selectedCategory);
     }
-    if (selectedEnlaceFilter !== 'todos') {
+    if (!zoneFilter && selectedEnlaceFilter !== 'todos') {
       result = result.filter(c => {
         const target = c.target_enlace || 'izcalli';
         if (selectedEnlaceFilter === 'izcalli') {
@@ -2663,7 +2676,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       });
     }
     return result;
-  }, [coupons, selectedCategory, selectedEnlaceFilter]);
+  }, [zoneFilteredCoupons, selectedCategory, selectedEnlaceFilter, zoneFilter]);
 
   return (
     <div className="w-full h-full min-h-screen overflow-x-hidden pb-40 bg-gray-50/50">
@@ -2684,7 +2697,9 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       {/* Categories below Flyer */}
       <div className="max-w-[1500px] mx-auto px-6 md:px-12 pt-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-2 sm:mb-0 leading-none">Explorar Cupones</h2>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-2 sm:mb-0 leading-none">
+            {zoneFilter === 'tlalnepantla' ? 'Cuponmanía Tlalnepantla' : zoneFilter === 'izcalli' ? 'Cuponmanía Izcalli' : 'Explorar Cupones'}
+          </h2>
           <button 
             type="button"
             onClick={() => {
@@ -2714,42 +2729,44 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
         </div>
 
         {/* Enlace Target Filter */}
-        <div className="flex flex-wrap items-center gap-3 mt-6 border-t border-black/5 pt-6">
-          <span className="text-[10px] font-black uppercase text-black/40 tracking-wider mr-2">Filtrar por Municipio/Enlace:</span>
-          <button 
-            type="button"
-            onClick={() => setSelectedEnlaceFilter('todos')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
-              selectedEnlaceFilter === 'todos' 
-                ? 'bg-secondary text-white border-secondary shadow-md' 
-                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
-            }`}
-          >
-            Todos 🌍
-          </button>
-          <button 
-            type="button"
-            onClick={() => setSelectedEnlaceFilter('izcalli')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
-              selectedEnlaceFilter === 'izcalli' 
-                ? 'bg-secondary text-white border-secondary shadow-md' 
-                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
-            }`}
-          >
-            Enlace Izcalli 🏙️
-          </button>
-          <button 
-            type="button"
-            onClick={() => setSelectedEnlaceFilter('tlalnepantla')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
-              selectedEnlaceFilter === 'tlalnepantla' 
-                ? 'bg-secondary text-white border-secondary shadow-md' 
-                : 'bg-white text-black/50 border-black/5 hover:border-black/15'
-            }`}
-          >
-            Enlace Tlalnepantla 🏘️
-          </button>
-        </div>
+        {!zoneFilter && (
+          <div className="flex flex-wrap items-center gap-3 mt-6 border-t border-black/5 pt-6">
+            <span className="text-[10px] font-black uppercase text-black/40 tracking-wider mr-2">Filtrar por Municipio/Enlace:</span>
+            <button 
+              type="button"
+              onClick={() => setSelectedEnlaceFilter('todos')}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                selectedEnlaceFilter === 'todos' 
+                  ? 'bg-secondary text-white border-secondary shadow-md' 
+                  : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+              }`}
+            >
+              Todos 🌍
+            </button>
+            <button 
+              type="button"
+              onClick={() => setSelectedEnlaceFilter('izcalli')}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                selectedEnlaceFilter === 'izcalli' 
+                  ? 'bg-secondary text-white border-secondary shadow-md' 
+                  : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+              }`}
+            >
+              Enlace Izcalli 🏙️
+            </button>
+            <button 
+              type="button"
+              onClick={() => setSelectedEnlaceFilter('tlalnepantla')}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                selectedEnlaceFilter === 'tlalnepantla' 
+                  ? 'bg-secondary text-white border-secondary shadow-md' 
+                  : 'bg-white text-black/50 border-black/5 hover:border-black/15'
+              }`}
+            >
+              Enlace Tlalnepantla 🏘️
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="max-w-[1500px] mx-auto p-6 md:p-12 pt-8">
@@ -2771,13 +2788,22 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
             ))}
           </div>
         </div>
+      ) : zoneFilteredCoupons.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10 px-6 text-center">
+          <Ticket className="w-16 h-16 mb-4 opacity-40 text-primary" />
+          <p className="font-black uppercase tracking-widest text-xs text-black/60">No hay cupones actualmente para Cuponmanía {zoneFilter === 'tlalnepantla' ? 'Tlalnepantla' : 'Izcalli'}</p>
+          <p className="text-[10px] text-black/40 font-bold max-w-sm mt-3 uppercase tracking-widest leading-relaxed">
+            ¡Estamos preparando grandes beneficios con los comercios locales muy pronto!
+          </p>
+        </div>
       ) : filteredCoupons.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10">
           <LayoutGrid className="w-16 h-16 mb-4 opacity-50" />
-          <p className="font-black uppercase tracking-widest text-xs">No hay cupones disponibles en esta categoría</p>
+          <p className="font-black uppercase tracking-widest text-xs">No hay cupones disponibles en la categoría "{selectedCategory}"</p>
           <button 
+            type="button"
             onClick={() => setSelectedCategory('Todos')}
-            className="mt-6 px-10 py-4 bg-gray-50 hover:bg-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black/40 transition-all"
+            className="mt-6 px-10 py-4 bg-gray-50 hover:bg-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black/40 transition-all cursor-pointer"
           >
             Ver todas las categorías
           </button>
@@ -5558,7 +5584,12 @@ export default function App() {
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                    </button>
+                  )}
+                  {cuponmaniaEnabled && (
+                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                     </button>
                   )}
 
@@ -5571,14 +5602,17 @@ export default function App() {
                   <button onClick={() => setActiveView('admin_dashboard')} className={navItemClasses('admin_dashboard')}>
                      <LayoutDashboard className="w-5 h-5" /> <span>Métricas</span>
                   </button>
-                  <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
-                  </button>
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
                   <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
+                  </button>
+                  <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                  </button>
+                  <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
+                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                   </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
                      <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
@@ -5601,7 +5635,12 @@ export default function App() {
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                    </button>
+                  )}
+                  {cuponmaniaEnabled && (
+                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                     </button>
                   )}
 
@@ -5619,18 +5658,23 @@ export default function App() {
                      <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
                   </button>
 
-                  {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
-                    <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía</span>
-                    </button>
-                  )}
-
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
                   <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
                   </button>
+
+                  {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
+                    <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                    </button>
+                  )}
+                  {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
+                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
+                    </button>
+                  )}
 
                   <button onClick={() => setActiveView('wallet')} className={navItemClasses('wallet')}>
                      <Ticket className="w-5 h-5" /> <span>{currentRole === 'patrocinador' ? 'Mis Cupones' : 'Mi Cuponera'}</span>
@@ -5881,7 +5925,52 @@ export default function App() {
       case 'marketplace': 
         return (
           <div className="relative w-full h-full min-h-[calc(100vh-80px)]">
-            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} showFeedback={showFeedback} />
+            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer1} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} showFeedback={showFeedback} zoneFilter="izcalli" />
+            
+            {!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador' && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="bg-white/40 backdrop-blur-2xl p-8 md:p-14 rounded-[30px] md:rounded-[60px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border border-white/40 text-center w-full max-w-[90%] md:max-w-lg transform transition-all"
+                >
+                  <div className="w-20 h-20 md:w-28 md:h-28 bg-primary/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 md:mb-10 text-primary animate-pulse shadow-inner">
+                    <Calendar className="w-10 h-10 md:w-14 md:h-14" />
+                  </div>
+                  
+                  <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-4 md:mb-6 leading-none text-black drop-shadow-sm">
+                    Próximamente
+                  </h2>
+                  
+                  <div className="w-12 md:w-20 h-1.5 md:h-2 bg-primary mx-auto mb-6 md:mb-10 rounded-full" />
+                  
+                  <p className="text-sm md:text-lg font-bold uppercase tracking-[0.15em] md:tracking-[0.25em] text-black/70 mb-8 md:mb-12 leading-relaxed max-w-sm mx-auto">
+                    Estamos preparando la mayor red de beneficios. <br/>
+                    <span className="text-primary font-black block mt-2 text-xl">Disponible en Junio 2026.</span>
+                  </p>
+                  
+                  <button 
+                    onClick={() => setActiveView('landing')}
+                    className="mb-10 px-12 py-5 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-secondary transition-all active:scale-95 shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 mx-auto"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Regresar al Inicio
+                  </button>
+                  
+                  <div className="flex items-center justify-center gap-3 md:gap-5">
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2.5 h-2.5 md:w-4 md:h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </div>
+        );
+      case 'cuponmania_tlalnepantla': 
+        return (
+          <div className="relative w-full h-full min-h-[calc(100vh-80px)]">
+            <MarketplaceView coupons={activeCoupons} savedIds={savedIds} likedIds={likedIds} onSave={handleSaveCoupon} onLike={handleLikeCoupon} onShowFlyer={() => setIsFlyerFullscreen(true)} flyerLink={flyerLinks.flyer2} users={users} onShowSponsor={(s) => setViewingSponsor(s)} isLoading={isFetchingCoupons} isAdmin={currentRole === 'admin'} onDelete={handleDeleteCoupon} showFeedback={showFeedback} zoneFilter="tlalnepantla" />
             
             {!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador' && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md pointer-events-auto">
@@ -6443,84 +6532,98 @@ export default function App() {
       </main>
       
       {/* Mobile Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-secondary border-t border-white/10 flex items-center justify-around px-2 z-[1000] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-white">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-secondary border-t border-white/10 flex items-center justify-around px-1 z-[1000] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-white">
         
         {/* Dynamic Navigation for Admin */}
         {currentUser?.role === 'admin' && (
           <>
             <button onClick={() => setActiveView('admin_dashboard')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'admin_dashboard' ? 'text-white scale-110' : 'text-white/40'}`}>
               <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Admin</span>
+              <span className="text-[6.5px] font-black uppercase">Admin</span>
             </button>
             <button onClick={() => { setActiveView('generator'); setCoupon(null); }} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'generator' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Ticket className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Crear</span>
-            </button>
-            <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <LayoutGrid className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Cupones</span>
+              <span className="text-[6.5px] font-black uppercase">Crear</span>
             </button>
             <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Megaphone className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Izcalli</span>
+              <span className="text-[6.5px] font-black uppercase">Izcalli</span>
+            </button>
+            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
+            </button>
+            <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <LayoutGrid className="w-5 h-5" />
+              <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
+            </button>
+            <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <LayoutGrid className="w-5 h-5" />
+              <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
             </button>
           </>
         )}
-
+ 
         {/* Dynamic Navigation for Patrocinador */}
         {currentUser?.role === 'patrocinador' && (
           <>
             <button onClick={() => { setActiveView('generator'); setCoupon(null); }} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'generator' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Ticket className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Crear</span>
+              <span className="text-[6.5px] font-black uppercase">Crear</span>
             </button>
             <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Megaphone className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Izcalli</span>
+              <span className="text-[6.5px] font-black uppercase">Izcalli</span>
             </button>
-            {cuponmaniaEnabled && (
+            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
+            </button>
+            {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
               <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
                 <LayoutGrid className="w-5 h-5" />
-                <span className="text-[7px] font-black uppercase">Cupones</span>
+                <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
               </button>
             )}
-            <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Ticket className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Mis Cupones</span>
-            </button>
+            {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
+              <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+                <LayoutGrid className="w-5 h-5" />
+                <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
+              </button>
+            )}
           </>
         )}
-
+ 
         {/* Dynamic Navigation for Guest / Standard Registered User */}
         {(!currentUser || currentUser?.role === 'usuario') && (
           <>
             <button onClick={() => setActiveView('enlace_izcalli')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_izcalli' ? 'text-white scale-110' : 'text-white/40'}`}>
               <Megaphone className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Izcalli</span>
+              <span className="text-[6.5px] font-black uppercase">Izcalli</span>
+            </button>
+            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+              <Megaphone className="w-5 h-5" />
+              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
             </button>
             {cuponmaniaEnabled && (
               <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
                 <LayoutGrid className="w-5 h-5" />
-                <span className="text-[7px] font-black uppercase">Cupones</span>
+                <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
               </button>
             )}
-            <button onClick={() => setActiveView('landing')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'landing' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Home className="w-5 h-5" />
-              <span className="text-[7px] font-black uppercase">Promociona</span>
-            </button>
-            {cuponmaniaEnabled && currentUser && (
-              <button onClick={() => setActiveView('wallet')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'wallet' ? 'text-white scale-110' : 'text-white/40'}`}>
-                <Ticket className="w-5 h-5" />
-                <span className="text-[7px] font-black uppercase">Billetera</span>
+            {cuponmaniaEnabled && (
+              <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
+                <LayoutGrid className="w-5 h-5" />
+                <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
               </button>
             )}
           </>
         )}
-
+ 
         {/* Standard User / Notifications Access and Logout Option */}
         <button onClick={() => setActiveView('profile')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'profile' ? 'text-white scale-110' : 'text-white/40'}`}>
           <User className="w-5 h-5" />
-          <span className="text-[7px] font-black uppercase">{currentUser ? 'Perfil' : 'Acceso'}</span>
+          <span className="text-[6.5px] font-black uppercase">{currentUser ? 'Perfil' : 'Acceso'}</span>
         </button>
 
         {currentUser && (
