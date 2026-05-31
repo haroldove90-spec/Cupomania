@@ -71,7 +71,8 @@ import {
   Bookmark,
   HelpCircle,
   Filter,
-  ChevronDown
+  ChevronDown,
+  Smartphone
 } from 'lucide-react';
 import { generateCoupon } from './services/geminiService';
 import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption, IzcalliFlyer } from './types';
@@ -4512,6 +4513,12 @@ export default function App() {
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [installTab, setInstallTab] = useState<'android' | 'ios'>(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return isIOS ? 'ios' : 'android';
+  });
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isFetchingCoupons, setIsFetchingCoupons] = useState(true);
@@ -4562,6 +4569,24 @@ export default function App() {
   const handleDismissInstall = () => {
     setShowInstallPrompt(false);
     sessionStorage.setItem('cuponmania_install_dismissed', 'true');
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+          showFeedback('¡App de Cuponmanía instalada con éxito!', 'success');
+        }
+      } catch (err) {
+        console.error("Install prompt error:", err);
+        setShowInstallModal(true);
+      }
+    } else {
+      setShowInstallModal(true);
+    }
   };
   const [coupon, setCoupon] = useState<CuponConfig | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
@@ -6535,6 +6560,16 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Botón de Instalar App */}
+          <button
+            onClick={handleInstallClick}
+            className="flex items-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-550 hover:from-emerald-600 hover:to-teal-600 hover:scale-[1.03] text-white rounded-xl text-[9px] md:text-[10.5px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-teal-500/20 cursor-pointer border border-emerald-400/25"
+          >
+            <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+            <span className="hidden sm:inline">Instalar App</span>
+            <span className="sm:hidden">Instalar</span>
+          </button>
+
           {currentUser?.role === 'admin' && (
             <button
               onClick={() => setActiveView('admin_dashboard')}
@@ -6706,6 +6741,158 @@ export default function App() {
         isOpen={!!viewingSponsor} 
         onClose={() => setViewingSponsor(null)} 
       />
+
+      {/* Modal de Instrucciones de Instalación de App (PWA) */}
+      <AnimatePresence>
+        {showInstallModal && (
+          <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInstallModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 20, opacity: 0 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl border border-black/5 z-10 flex flex-col text-gray-800"
+            >
+              {/* Header con gradiente */}
+              <div className="p-5 bg-gradient-to-br from-teal-950 to-emerald-950 text-white flex flex-col items-center text-center relative border-b border-white/5">
+                <button
+                  onClick={() => setShowInstallModal(false)}
+                  className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="w-12 h-12 bg-teal-500/20 border border-teal-500/30 rounded-2xl flex items-center justify-center text-teal-400 mb-2.5 shadow-inner">
+                  <Smartphone className="w-7 h-7" />
+                </div>
+
+                <h3 className="text-base md:text-lg font-black uppercase tracking-tight">Instalar Cuponmanía</h3>
+                <p className="text-[9px] md:text-[10px] text-emerald-400 uppercase tracking-widest font-bold mt-0.5">Disfruta la app en tu móvil u ordenador</p>
+              </div>
+
+              {/* Tabs para seleccionar plataforma */}
+              <div className="grid grid-cols-2 border-b border-gray-100 bg-gray-50/50 p-1">
+                <button
+                  onClick={() => setInstallTab('android')}
+                  className={`py-2 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    installTab === 'android'
+                      ? 'bg-white text-teal-950 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Android o PC</span>
+                </button>
+                <button
+                  onClick={() => setInstallTab('ios')}
+                  className={`py-2 text-[9px] md:text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    installTab === 'ios'
+                      ? 'bg-white text-teal-950 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>iPhone / iPad</span>
+                </button>
+              </div>
+
+              {/* Contenido / Pasos */}
+              <div className="p-5 space-y-4">
+                {installTab === 'android' ? (
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-gray-500 font-medium text-center leading-relaxed">
+                      Sigue estos simples pasos para instalar en Android, Chrome u otros navegadores:
+                    </p>
+                    
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-teal-100 text-teal-700 text-[11px] font-black flex items-center justify-center">1</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed">
+                          Toca el botón con los <span className="font-extrabold uppercase tracking-widest text-[8.5px]">3 puntos ⋮</span> del navegador.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-teal-100 text-teal-700 text-[11px] font-black flex items-center justify-center">2</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed">
+                          Selecciona <span className="text-teal-700 font-black uppercase tracking-wide">"Instalar aplicación"</span> o <span className="text-teal-700 font-black uppercase tracking-wide">"Instalar app"</span>.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-teal-100 text-teal-700 text-[11px] font-black flex items-center justify-center">3</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed">
+                          Confirma en <span className="font-extrabold uppercase text-teal-700">"Instalar"</span> para tener el icono de la App directa.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-gray-500 font-medium text-center leading-relaxed">
+                      En iOS (iPhone/iPad), puedes añadirlo manualmente a tu pantalla desde el navegador Safari:
+                    </p>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-emerald-100 text-emerald-700 text-[11px] font-black flex items-center justify-center">1</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed">
+                          Abre esta página web exclusivamente usando <span className="font-bold underline text-emerald-800">Safari</span>.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-emerald-100 text-emerald-700 text-[11px] font-black flex items-center justify-center">2</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed flex items-center flex-wrap gap-1">
+                          Toca el icono de <span>Compartir (Share)</span> <Share2 className="w-3.5 h-3.5 text-emerald-600 inline" /> de Safari.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 bg-gray-50 p-2.5 rounded-xl border border-black/5">
+                        <span className="flex-shrink-0 w-5.5 h-5.5 rounded-lg bg-emerald-100 text-emerald-700 text-[11px] font-black flex items-center justify-center">3</span>
+                        <p className="text-[10.5px] text-gray-700 font-semibold leading-relaxed flex items-center flex-wrap gap-1">
+                          Elige la opción <span>"Agregar al inicio"</span> u <span>"Add to Home Screen"</span> <Home className="w-3.5 h-3.5 text-emerald-600 inline" />.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones */}
+              <div className="p-5 bg-gray-50 border-t border-gray-100 flex flex-col gap-2.5">
+                {deferredPrompt && installTab === 'android' ? (
+                  <button
+                    onClick={async () => {
+                      setShowInstallModal(false);
+                      await handleInstallClick();
+                    }}
+                    className="w-full py-2.5 bg-teal-950 text-amber-400 hover:bg-teal-900 border border-amber-400/20 font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl shadow-lg hover:scale-[1.01] active:scale-95 transition-all text-center cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Instalar Directamente</span>
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setShowInstallModal(false)}
+                  className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-black text-[9px] md:text-[10px] uppercase tracking-widest rounded-2xl transition-all text-center cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Sello de autenticidad Cuponmanía */}
       <div className="fixed bottom-24 right-6 z-[2000] opacity-20 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
