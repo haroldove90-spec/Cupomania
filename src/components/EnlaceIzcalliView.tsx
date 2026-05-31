@@ -189,10 +189,10 @@ export default function EnlaceIzcalliView({
       if (localString) {
         const parsed = JSON.parse(localString);
         if (Array.isArray(parsed)) {
-          // Mantener sólo flyers con imágenes razonables y truncar a máximo 8 items locales recientes para liberar espacio
+          // Mantener sólo flyers con imágenes razonables y truncar a máximo 40 items locales recientes para liberar espacio de forma holgada
           const optimizedLocals = parsed
             .filter((item: any) => item && item.imageUrl && item.imageUrl.length < 250000)
-            .slice(0, 8);
+            .slice(0, 40);
           localStorage.setItem('izcalli_flyers_local', JSON.stringify(optimizedLocals));
         }
       }
@@ -421,8 +421,8 @@ export default function EnlaceIzcalliView({
     } catch (err) {
       console.warn('LocalStorage quota limit reached, saving with sliced history fallback...', err);
       try {
-        // Keep only top 10 recent flyers locally to free up space
-        const limited = updatedFlyers.slice(0, 10);
+        // Keep only top 35 recent flyers locally to free up space
+        const limited = updatedFlyers.slice(0, 35);
         localStorage.setItem('izcalli_flyers_local', JSON.stringify(limited));
       } catch (innerErr) {
         console.error('Failed to write even limited local flyers:', innerErr);

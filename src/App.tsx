@@ -3049,10 +3049,10 @@ const WalletView = ({
         if (localString) {
           const parsed = JSON.parse(localString);
           if (Array.isArray(parsed)) {
-            // Filtrar cualquier flyer pesado (ej. con base64 > 250KB) y limitar a 8 locales para prevenir QuotaExceededError
+            // Filtrar cualquier flyer pesado (ej. con base64 > 250KB) y limitar a 40 locales para prevenir QuotaExceededError de forma holgada
             const optimizedLocals = parsed
               .filter((item: any) => item && item.imageUrl && item.imageUrl.length < 250000)
-              .slice(0, 8);
+              .slice(0, 40);
             localStorage.setItem('izcalli_flyers_local', JSON.stringify(optimizedLocals));
           }
         }
