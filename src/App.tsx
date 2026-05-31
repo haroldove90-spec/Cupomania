@@ -3004,12 +3004,30 @@ const WalletView = ({
               creatorName: f.creator_name || 'Anónimo',
               createdAt: f.created_at,
               whatsapp: f.whatsapp || '',
-              phone: f.phone || ''
+              phone: f.phone || '',
+              target_enlace: f.target_enlace || 'izcalli'
             }));
           }
         }
       } catch (err) {
         console.warn('Supabase read error inside WalletView:', err);
+      }
+
+      // Saneamiento preventivo de localStorage para eliminar flyers gigantescos del pasado y no agotar cuota (5MB)
+      try {
+        const localString = localStorage.getItem('izcalli_flyers_local');
+        if (localString) {
+          const parsed = JSON.parse(localString);
+          if (Array.isArray(parsed)) {
+            // Filtrar cualquier flyer pesado (ej. con base64 > 250KB) y limitar a 8 locales para prevenir QuotaExceededError
+            const optimizedLocals = parsed
+              .filter((item: any) => item && item.imageUrl && item.imageUrl.length < 250000)
+              .slice(0, 8);
+            localStorage.setItem('izcalli_flyers_local', JSON.stringify(optimizedLocals));
+          }
+        }
+      } catch (e) {
+        console.warn('Error durante saneamiento preventivo en App.tsx:', e);
       }
 
       const localFlyersStr = localStorage.getItem('izcalli_flyers_local');

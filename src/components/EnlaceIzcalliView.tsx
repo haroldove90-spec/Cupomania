@@ -170,6 +170,23 @@ export default function EnlaceIzcalliView({
     let loadedFlyers: IzcalliFlyer[] = [];
     let loadedCategories = [...DEFAULT_CATEGORIES];
 
+    // Realizar saneamiento preventivo de localStorage para eliminar flyers pesados del pasado y no agotar cuota (5MB)
+    try {
+      const localString = localStorage.getItem('izcalli_flyers_local');
+      if (localString) {
+        const parsed = JSON.parse(localString);
+        if (Array.isArray(parsed)) {
+          // Mantener sólo flyers con imágenes razonables y truncar a máximo 8 items locales recientes para liberar espacio
+          const optimizedLocals = parsed
+            .filter((item: any) => item && item.imageUrl && item.imageUrl.length < 250000)
+            .slice(0, 8);
+          localStorage.setItem('izcalli_flyers_local', JSON.stringify(optimizedLocals));
+        }
+      }
+    } catch (e) {
+      console.warn('Error durante saneamiento preventivo de flyers locales:', e);
+    }
+
     try {
       const supabase = getSupabase();
       if (supabase) {
@@ -287,7 +304,7 @@ export default function EnlaceIzcalliView({
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 1100; // Optimal constraint for sharp display and low memory footprint
+        const maxDim = 720; // Optimal constraint for sharp display and low memory/payload size
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -305,8 +322,8 @@ export default function EnlaceIzcalliView({
         if (ctx) {
           // Draw image to canvas
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress with quality 0.75 to save massive amounts of network & disk resources
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          // Compress with quality 0.50 to guarantee low memory & fast sync upload
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
           setFlyerImageData(compressedBase64);
         } else {
           setFlyerImageData(event.target?.result as string);
