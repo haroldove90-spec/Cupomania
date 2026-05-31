@@ -795,15 +795,20 @@ export default function EnlaceIzcalliView({
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-full bg-white border border-black/5 rounded-2xl px-5 py-3.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-teal-950 shadow-sm cursor-pointer hover:bg-gray-50/85 transition-all text-left"
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 flex-1 mr-2 min-w-0">
                     {selectedCategory === 'Todos' ? (
-                      <Grid className="w-4 h-4 text-emerald-500" />
+                      <Grid className="w-4 h-4 text-emerald-500 shrink-0" />
                     ) : (
-                      <Tag className="w-4 h-4 text-teal-600" />
+                      <Tag className="w-4 h-4 text-teal-600 shrink-0" />
                     )}
-                    <span>{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+                    <span className="truncate">{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+                    <span className="ml-auto bg-teal-950/5 text-teal-950 text-[9px] font-black px-2 py-0.5 rounded-full shrink-0">
+                      {selectedCategory === 'Todos' 
+                        ? filteredFlyersByEnlace.length 
+                        : filteredFlyersByEnlace.filter(f => f.category === selectedCategory).length}
+                    </span>
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
@@ -824,34 +829,55 @@ export default function EnlaceIzcalliView({
                             setSelectedCategory('Todos');
                             setIsDropdownOpen(false);
                           }}
-                          className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                          className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between cursor-pointer ${
                             selectedCategory === 'Todos' 
                               ? 'bg-teal-50 text-teal-950 font-black' 
                               : 'text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          <Grid className="w-4 h-4 text-emerald-500" />
-                          Nuevos negocios
+                          <span className="flex items-center gap-2 min-w-0 mr-2">
+                            <Grid className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <span className="truncate">Nuevos negocios</span>
+                          </span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            selectedCategory === 'Todos' 
+                              ? 'bg-teal-950/10 text-teal-950' 
+                              : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {filteredFlyersByEnlace.length}
+                          </span>
                         </button>
                         
-                        {activeCategories.map(cat => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(cat);
-                              setIsDropdownOpen(false);
-                            }}
-                            className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
-                              selectedCategory === cat 
-                                ? 'bg-teal-50 text-teal-950 font-black' 
-                                : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Tag className="w-4 h-4 text-teal-600" />
-                            {cat}
-                          </button>
-                        ))}
+                        {activeCategories.map(cat => {
+                          const count = filteredFlyersByEnlace.filter(f => f.category === cat).length;
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(cat);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between cursor-pointer ${
+                                selectedCategory === cat 
+                                  ? 'bg-teal-50 text-teal-950 font-black' 
+                                  : 'text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2 min-w-0 mr-2">
+                                <Tag className="w-4 h-4 text-teal-600 shrink-0" />
+                                <span className="truncate">{cat}</span>
+                              </span>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                selectedCategory === cat 
+                                  ? 'bg-teal-950/10 text-teal-950' 
+                                  : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {count}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </motion.div>
                     </>
                   )}

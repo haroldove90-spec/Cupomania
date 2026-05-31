@@ -2663,6 +2663,33 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     return ['Todos', ...list];
   }, [zoneFilteredCoupons]);
+
+  const categoryCounts = useMemo(() => {
+    let baseCoupons = zoneFilteredCoupons;
+    if (!zoneFilter && selectedEnlaceFilter !== 'todos') {
+      baseCoupons = baseCoupons.filter(c => {
+        const target = c.target_enlace || 'izcalli';
+        if (selectedEnlaceFilter === 'izcalli') {
+          return target === 'izcalli' || target === 'ambas';
+        } else {
+          return target === 'tlalnepantla' || target === 'ambas';
+        }
+      });
+    }
+
+    const counts: { [key: string]: number } = {
+      Todos: baseCoupons.length
+    };
+
+    baseCoupons.forEach(c => {
+      const cat = normalizeCategory(c.data.categoria);
+      if (cat) {
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+    });
+
+    return counts;
+  }, [zoneFilteredCoupons, selectedEnlaceFilter, zoneFilter]);
   
   const filteredCoupons = useMemo(() => {
     let result = zoneFilteredCoupons;
@@ -2727,15 +2754,18 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="w-full bg-white border border-black/10 rounded-2xl px-5 py-3.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-black shadow-sm cursor-pointer hover:bg-gray-50/85 transition-all text-left"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 flex-1 mr-2 min-w-0">
                 {selectedCategory === 'Todos' ? (
-                  <LayoutGrid className="w-4 h-4 text-primary" />
+                  <LayoutGrid className="w-4 h-4 text-primary shrink-0" />
                 ) : (
-                  <Tag className="w-4 h-4 text-emerald-500" />
+                  <Tag className="w-4 h-4 text-emerald-500 shrink-0" />
                 )}
-                <span>{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+                <span className="truncate">{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+                <span className="ml-auto bg-black/5 text-black/70 text-[9px] font-black px-2 py-0.5 rounded-full shrink-0">
+                  {categoryCounts[selectedCategory] || 0}
+                </span>
               </span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -2750,28 +2780,40 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
                     transition={{ duration: 0.15 }}
                     className="absolute left-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-black/10 py-2 z-40 max-h-72 overflow-y-auto scrollbar-thin"
                   >
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(cat);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
-                          selectedCategory === cat 
-                            ? 'bg-gray-100 text-black font-black' 
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {cat === 'Todos' ? (
-                          <LayoutGrid className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Tag className="w-4 h-4 text-emerald-500" />
-                        )}
-                        {cat === 'Todos' ? 'Nuevos negocios' : cat}
-                      </button>
-                    ))}
+                    {categories.map(cat => {
+                      const count = categoryCounts[cat] || 0;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between cursor-pointer ${
+                            selectedCategory === cat 
+                              ? 'bg-gray-100 text-black font-black' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 min-w-0 mr-2">
+                            {cat === 'Todos' ? (
+                              <LayoutGrid className="w-4 h-4 text-primary shrink-0" />
+                            ) : (
+                              <Tag className="w-4 h-4 text-emerald-500 shrink-0" />
+                            )}
+                            <span className="truncate">{cat === 'Todos' ? 'Nuevos negocios' : cat}</span>
+                          </span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            selectedCategory === cat 
+                              ? 'bg-black/10 text-black' 
+                              : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </motion.div>
                 </>
               )}
