@@ -70,7 +70,8 @@ import {
   Globe,
   Bookmark,
   HelpCircle,
-  Filter
+  Filter,
+  ChevronDown
 } from 'lucide-react';
 import { generateCoupon } from './services/geminiService';
 import { BusinessData, CuponConfig, UserRole, AppView, UserProfile, AdminMetrics, AppNotification, CouponRedemption, IzcalliFlyer } from './types';
@@ -2585,6 +2586,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
   zoneFilter?: 'izcalli' | 'tlalnepantla';
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [selectedEnlaceFilter, setSelectedEnlaceFilter] = useState<'todos' | 'izcalli' | 'tlalnepantla'>('todos');
 
   const [showTour, setShowTour] = useState<boolean>(() => {
@@ -2714,20 +2716,67 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
             <span>Guía Interactiva</span>
           </button>
         </div>
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
-          {categories.map(cat => (
-            <button 
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
-                selectedCategory === cat 
-                  ? 'bg-black text-white border-black shadow-xl shadow-black/20' 
-                  : 'bg-white text-black/40 border-black/5 hover:border-black/20'
-              }`}
+        {/* Category dropdown selector */}
+        <div className="mb-6 relative z-30 max-w-sm">
+          <label className="block text-[9px] font-black uppercase tracking-widest text-black/40 mb-2 ml-1">
+            Filtrar Cupones por Categoría
+          </label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full bg-white border border-black/10 rounded-2xl px-5 py-3.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-black shadow-sm cursor-pointer hover:bg-gray-50/85 transition-all text-left"
             >
-              {cat}
+              <span className="flex items-center gap-2">
+                {selectedCategory === 'Todos' ? (
+                  <LayoutGrid className="w-4 h-4 text-primary" />
+                ) : (
+                  <Tag className="w-4 h-4 text-emerald-500" />
+                )}
+                <span>{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
-          ))}
+
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <>
+                  {/* Overlay to close on tap/click outside */}
+                  <div className="fixed inset-0 z-30" onClick={() => setIsDropdownOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-black/10 py-2 z-40 max-h-72 overflow-y-auto scrollbar-thin"
+                  >
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                          selectedCategory === cat 
+                            ? 'bg-gray-100 text-black font-black' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {cat === 'Todos' ? (
+                          <LayoutGrid className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Tag className="w-4 h-4 text-emerald-500" />
+                        )}
+                        {cat === 'Todos' ? 'Nuevos negocios' : cat}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Enlace Target Filter */}
@@ -2803,7 +2852,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       ) : filteredCoupons.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10">
           <LayoutGrid className="w-16 h-16 mb-4 opacity-50" />
-          <p className="font-black uppercase tracking-widest text-xs">No hay cupones disponibles en la categoría "{selectedCategory}"</p>
+          <p className="font-black uppercase tracking-widest text-xs">No hay cupones disponibles en la categoría "{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}"</p>
           <button 
             type="button"
             onClick={() => setSelectedCategory('Todos')}

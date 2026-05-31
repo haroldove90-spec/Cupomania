@@ -19,7 +19,8 @@ import {
   Heart,
   Bookmark,
   Phone,
-  MessageCircle
+  MessageCircle,
+  ChevronDown
 } from 'lucide-react';
 import { getSupabase } from '../lib/supabase';
 import { UserProfile, IzcalliFlyer } from '../types';
@@ -53,6 +54,7 @@ export default function EnlaceIzcalliView({
   const [flyers, setFlyers] = useState<IzcalliFlyer[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // New Category input state
@@ -782,33 +784,79 @@ export default function EnlaceIzcalliView({
         
         {activeTab === 'gallery' ? (
           <>
-            {/* Category selection selector */}
-            <div className="mb-8 overflow-x-auto py-2 -mx-4 px-4 flex gap-2 scrollbar-none select-none">
-              <button
-                onClick={() => setSelectedCategory('Todos')}
-                className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                  selectedCategory === 'Todos' 
-                    ? 'bg-teal-950 text-white shadow-md' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100 border border-black/5'
-                }`}
-              >
-                <Grid className="w-3.5 h-3.5" />
-                Todos
-              </button>
-              {activeCategories.map(cat => (
+            {/* Category dropdown selector */}
+            <div className="mb-8 relative z-30 max-w-sm">
+              <label className="block text-[9px] font-black uppercase tracking-widest text-teal-900/60 mb-2 ml-1">
+                Filtrar Cartelera por Categoría
+              </label>
+              <div className="relative">
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                    selectedCategory === cat 
-                      ? 'bg-teal-950 text-white shadow-md' 
-                      : 'bg-white text-gray-500 hover:bg-gray-100 border border-black/5'
-                  }`}
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full bg-white border border-black/5 rounded-2xl px-5 py-3.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-teal-950 shadow-sm cursor-pointer hover:bg-gray-50/85 transition-all text-left"
                 >
-                  <Tag className="w-3.5 h-3.5 text-teal-500/50" />
-                  {cat}
+                  <span className="flex items-center gap-2">
+                    {selectedCategory === 'Todos' ? (
+                      <Grid className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Tag className="w-4 h-4 text-teal-600" />
+                    )}
+                    <span>{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}</span>
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-250 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
-              ))}
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <>
+                      {/* Overlay to close on tap/click outside */}
+                      <div className="fixed inset-0 z-30" onClick={() => setIsDropdownOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-black/5 py-2 z-40 max-h-72 overflow-y-auto scrollbar-thin"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory('Todos');
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                            selectedCategory === 'Todos' 
+                              ? 'bg-teal-50 text-teal-950 font-black' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Grid className="w-4 h-4 text-emerald-500" />
+                          Nuevos negocios
+                        </button>
+                        
+                        {activeCategories.map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                              selectedCategory === cat 
+                                ? 'bg-teal-50 text-teal-950 font-black' 
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            <Tag className="w-4 h-4 text-teal-600" />
+                            {cat}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Main Showcase Gallery */}
@@ -826,7 +874,7 @@ export default function EnlaceIzcalliView({
                   Cartelera de Flyers Vacía en {enlaceShortName}
                 </h3>
                 <p className="text-xs text-black/40 uppercase font-bold tracking-widest max-w-sm mx-auto leading-relaxed font-sans mb-4">
-                  Aún no se han publicado flyers publicitarios en {enlaceName} para la categoría "{selectedCategory}". Espera muy pronto las publicaciones de los comercios locales de la zona.
+                  Aún no se han publicado flyers publicitarios en {enlaceName} para la categoría "{selectedCategory === 'Todos' ? 'Nuevos negocios' : selectedCategory}". Espera muy pronto las publicaciones de los comercios locales de la zona.
                 </p>
                 {canManage && (
                   <button 
