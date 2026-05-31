@@ -5524,12 +5524,10 @@ export default function App() {
                 </label>
                 <select 
                   value={formData.target_enlace || 'izcalli'} 
-                  onChange={e => setFormData({...formData, target_enlace: e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas'})}
+                  onChange={e => setFormData({...formData, target_enlace: e.target.value as 'izcalli'})}
                   className="w-full bg-gray-50 border border-black/5 rounded-2xl p-4 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                 >
                   <option value="izcalli">Enlace Izcalli 🏙️</option>
-                  <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
-                  <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
                 </select>
               </div>
             )}
@@ -5592,18 +5590,10 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
-                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
-                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
-                  </button>
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                        <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
-                    </button>
-                  )}
-                  {cuponmaniaEnabled && (
-                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                     </button>
                   )}
 
@@ -5619,14 +5609,8 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
-                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
-                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
-                  </button>
                   <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                      <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
-                  </button>
-                  <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
-                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                   </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
                      <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
@@ -5643,18 +5627,10 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
-                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
-                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
-                  </button>
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                        <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
-                    </button>
-                  )}
-                  {cuponmaniaEnabled && (
-                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                     </button>
                   )}
 
@@ -5675,18 +5651,10 @@ export default function App() {
                   <button onClick={() => setActiveView('enlace_izcalli')} className={navItemClasses('enlace_izcalli')}>
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
-                  <button onClick={() => setActiveView('enlace_tlalnepantla')} className={navItemClasses('enlace_tlalnepantla')}>
-                     <Megaphone className="w-5 h-5" /> <span>Enlace Tlalnepantla</span>
-                  </button>
 
                   {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
                        <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
-                    </button>
-                  )}
-                  {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
-                    <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={navItemClasses('cuponmania_tlalnepantla')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Tlalnepantla</span>
                     </button>
                   )}
 
@@ -6280,7 +6248,7 @@ export default function App() {
     }
   };
 
-  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'cuponmania_tlalnepantla' && activeView !== 'enlace_izcalli' && activeView !== 'enlace_tlalnepantla') {
+  if (!currentUser && activeView !== 'landing' && activeView !== 'privacy' && activeView !== 'marketplace' && activeView !== 'enlace_izcalli') {
     return <AuthView 
       upsertProfile={upsertProfile}
       onShowPrivacy={() => setActiveView('privacy')}
@@ -6563,17 +6531,9 @@ export default function App() {
               <Megaphone className="w-5 h-5" />
               <span className="text-[6.5px] font-black uppercase">Izcalli</span>
             </button>
-            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Megaphone className="w-5 h-5" />
-              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
-            </button>
             <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
               <LayoutGrid className="w-5 h-5" />
               <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
-            </button>
-            <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <LayoutGrid className="w-5 h-5" />
-              <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
             </button>
           </>
         )}
@@ -6589,20 +6549,10 @@ export default function App() {
               <Megaphone className="w-5 h-5" />
               <span className="text-[6.5px] font-black uppercase">Izcalli</span>
             </button>
-            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Megaphone className="w-5 h-5" />
-              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
-            </button>
             {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
               <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
                 <LayoutGrid className="w-5 h-5" />
                 <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
-              </button>
-            )}
-            {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
-              <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-                <LayoutGrid className="w-5 h-5" />
-                <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
               </button>
             )}
           </>
@@ -6615,20 +6565,10 @@ export default function App() {
               <Megaphone className="w-5 h-5" />
               <span className="text-[6.5px] font-black uppercase">Izcalli</span>
             </button>
-            <button onClick={() => setActiveView('enlace_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'enlace_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-              <Megaphone className="w-5 h-5" />
-              <span className="text-[6.5px] font-black uppercase">Tlalnepantla</span>
-            </button>
             {cuponmaniaEnabled && (
               <button onClick={() => setActiveView('marketplace')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'marketplace' ? 'text-white scale-110' : 'text-white/40'}`}>
                 <LayoutGrid className="w-5 h-5" />
                 <span className="text-[6.5px] font-black uppercase">Cup Izcalli</span>
-              </button>
-            )}
-            {cuponmaniaEnabled && (
-              <button onClick={() => setActiveView('cuponmania_tlalnepantla')} className={`flex flex-col items-center gap-1 transition-all ${activeView === 'cuponmania_tlalnepantla' ? 'text-white scale-110' : 'text-white/40'}`}>
-                <LayoutGrid className="w-5 h-5" />
-                <span className="text-[6.5px] font-black uppercase">Cup Tlalne</span>
               </button>
             )}
           </>

@@ -1198,12 +1198,10 @@ export default function EnlaceIzcalliView({
                   </label>
                   <select 
                     value={targetEnlace} 
-                    onChange={e => setTargetEnlace(e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas')}
+                    onChange={e => setTargetEnlace(e.target.value as 'izcalli')}
                     className="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none"
                   >
                     <option value="izcalli">Enlace Izcalli 🏙️</option>
-                    <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
-                    <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
                   </select>
                 </div>
               )}
@@ -1547,12 +1545,10 @@ export default function EnlaceIzcalliView({
                   </label>
                   <select 
                     value={editTargetEnlace} 
-                    onChange={e => setEditTargetEnlace(e.target.value as 'izcalli' | 'tlalnepantla' | 'ambas')}
+                    onChange={e => setEditTargetEnlace(e.target.value as 'izcalli')}
                     className="w-full bg-gray-50 border border-black/5 rounded-xl p-3.5 text-xs font-bold focus:ring-2 focus:ring-teal-500/20 outline-none"
                   >
                     <option value="izcalli">Enlace Izcalli 🏙️</option>
-                    <option value="tlalnepantla">Enlace Tlalnepantla 🏘️</option>
-                    <option value="ambas">Ambas Secciones (Izcalli + Tlalnepantla) 🌍</option>
                   </select>
                 </div>
 
