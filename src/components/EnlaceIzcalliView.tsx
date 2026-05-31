@@ -430,6 +430,7 @@ export default function EnlaceIzcalliView({
     }
 
     let dbSucceeded = false;
+    let dbErrorMessage = '';
     try {
       const supabase = getSupabase();
       if (supabase) {
@@ -448,10 +449,12 @@ export default function EnlaceIzcalliView({
         if (!error) {
           dbSucceeded = true;
         } else {
+          dbErrorMessage = error.message;
           console.warn('Supabase insertion error, using local fallback state', error);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      dbErrorMessage = err?.message || 'Error de conexión';
       console.warn('Background Supabase insert error:', err);
     }
 
@@ -465,7 +468,7 @@ export default function EnlaceIzcalliView({
     if (dbSucceeded) {
       showFeedback('¡Flyer publicado y sincronizado con éxito!');
     } else {
-      showFeedback('Flyer publicado con éxito (guardado localmente)');
+      showFeedback(`Guardado local: error de base de datos (${dbErrorMessage || 'Verificar columna target_enlace'})`, 'error');
     }
   };
 
@@ -575,6 +578,7 @@ export default function EnlaceIzcalliView({
     }
 
     let dbSucceeded = false;
+    let dbErrorMessage = '';
     try {
       const supabase = getSupabase();
       if (supabase) {
@@ -591,10 +595,12 @@ export default function EnlaceIzcalliView({
         if (!error) {
           dbSucceeded = true;
         } else {
+          dbErrorMessage = error.message;
           console.warn('Supabase update error:', error);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      dbErrorMessage = err?.message || 'Error de base de datos';
       console.warn('Database error during flyer update:', err);
     }
 
@@ -604,7 +610,7 @@ export default function EnlaceIzcalliView({
     if (dbSucceeded) {
       showFeedback('¡Flyer actualizado y sincronizado con éxito!');
     } else {
-      showFeedback('Flyer actualizado localmente');
+      showFeedback(`Actualizado local: error de base de datos (${dbErrorMessage})`, 'error');
     }
   };
 
