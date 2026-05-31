@@ -202,26 +202,35 @@ export default function EnlaceIzcalliView({
             target_enlace: f.target_enlace || 'izcalli'
           }));
         } else if (flyerError) {
-          console.warn('Database error while fetching flyers, falling back to local storage', flyerError);
-          throw flyerError;
+          console.warn('Database error while fetching flyers, relying on local storage fallback', flyerError);
         }
       }
     } catch (err) {
-      // Fallback local storage
-      const localFlyersStr = localStorage.getItem('izcalli_flyers_local');
-      if (localFlyersStr) {
-        try {
-          loadedFlyers = JSON.parse(localFlyersStr);
-        } catch (_) {}
-      }
-      
+      console.warn('Silent read error inside EnlaceIzcalliView:', err);
+    }
+
+    // Always merge in any flyers stored locally that are not already present from the database
+    const localFlyersStr = localStorage.getItem('izcalli_flyers_local');
+    if (localFlyersStr) {
+      try {
+        const locals = JSON.parse(localFlyersStr);
+        if (Array.isArray(locals)) {
+          const existingIds = new Set(loadedFlyers.map(f => f.id));
+          locals.forEach((lf: IzcalliFlyer) => {
+            if (!existingIds.has(lf.id)) {
+              loadedFlyers.push(lf);
+            }
+          });
+        }
+      } catch (_) {}
+    }
+    
+    try {
       const localCatsStr = localStorage.getItem('izcalli_categories_local');
       if (localCatsStr) {
-        try {
-          loadedCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...JSON.parse(localCatsStr)]));
-        } catch (_) {}
+        loadedCategories = Array.from(new Set([...loadedCategories, ...JSON.parse(localCatsStr)]));
       }
-    }
+    } catch (_) {}
 
     setFlyers(loadedFlyers);
     setCategories(loadedCategories);
