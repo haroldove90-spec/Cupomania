@@ -5845,14 +5845,12 @@ export default function App() {
               )}
 
               <div className="pt-10 space-y-3">
-                {deferredPrompt && !isAppInstalled && (
-                  <button 
-                    onClick={handleInstall}
-                    className="w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest bg-orange-500 text-white shadow-xl shadow-orange-500/20 hover:bg-orange-600 transition-all scale-100 hover:scale-105"
-                  >
-                    <Download className="w-5 h-5" /> <span>Instalar App</span>
-                  </button>
-                )}
+                <button 
+                  onClick={handleInstallClick}
+                  className="w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest bg-gradient-to-r from-emerald-500 to-teal-650 hover:from-emerald-600 hover:to-teal-600 text-white shadow-xl shadow-teal-500/15 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <Download className="w-5 h-5 animate-pulse" /> <span>Instalar App</span>
+                </button>
 
                 {currentUser && (
                   <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 hover:bg-red-50 transition-all">
@@ -6560,16 +6558,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Botón de Instalar App */}
-          <button
-            onClick={handleInstallClick}
-            className="flex items-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-550 hover:from-emerald-600 hover:to-teal-600 hover:scale-[1.03] text-white rounded-xl text-[9px] md:text-[10.5px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-teal-500/20 cursor-pointer border border-emerald-400/25"
-          >
-            <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
-            <span className="hidden sm:inline">Instalar App</span>
-            <span className="sm:hidden">Instalar</span>
-          </button>
-
           {currentUser?.role === 'admin' && (
             <button
               onClick={() => setActiveView('admin_dashboard')}
