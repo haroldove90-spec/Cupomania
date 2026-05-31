@@ -816,9 +816,11 @@ export default function EnlaceIzcalliView({
                 <div className="w-20 h-20 bg-gray-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-black/10">
                   <Filter className="w-10 h-10" />
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight mb-2">Cartelera vacía</h3>
-                <p className="text-xs text-black/40 uppercase font-bold tracking-widest max-w-sm mx-auto leading-relaxed">
-                  Aún no se han publicado flyers publicitarios en la categoría de <span className="text-primary font-black">"{selectedCategory}"</span>.
+                <h3 className="text-xl font-black uppercase tracking-tight mb-2">
+                  Próximamente Cuponmanía {isTlalnepantla ? 'Tlalnepantla' : 'Izcalli'}
+                </h3>
+                <p className="text-xs text-black/40 uppercase font-bold tracking-widest max-w-sm mx-auto leading-relaxed font-sans mb-4">
+                  Espera muy pronto las promociones de la zona.
                 </p>
                 {canManage && (
                   <button 
