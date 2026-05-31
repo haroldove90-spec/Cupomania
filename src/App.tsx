@@ -3119,10 +3119,17 @@ const WalletView = ({
             loadedFlyers = dbFlyers.map(f => {
               let whatsapp = f.whatsapp || '';
               let phone = '';
-              if (whatsapp.includes('||phone:')) {
-                const parts = whatsapp.split('||phone:');
-                whatsapp = parts[0];
-                phone = parts[1] || '';
+              let target_enlace = 'izcalli';
+              if (whatsapp.includes('||')) {
+                const tokens = whatsapp.split('||');
+                whatsapp = tokens[0] || '';
+                tokens.forEach(token => {
+                  if (token.startsWith('phone:')) {
+                    phone = token.substring(6);
+                  } else if (token.startsWith('enlace:')) {
+                    target_enlace = token.substring(7);
+                  }
+                });
               } else {
                 phone = f.phone || '';
               }
@@ -3136,7 +3143,7 @@ const WalletView = ({
                 createdAt: f.created_at,
                 whatsapp: whatsapp,
                 phone: phone,
-                target_enlace: f.target_enlace || 'izcalli'
+                target_enlace: target_enlace as 'izcalli' | 'tlalnepantla' | 'ambas'
               };
             });
           }

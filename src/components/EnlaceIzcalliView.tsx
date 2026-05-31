@@ -82,6 +82,8 @@ export default function EnlaceIzcalliView({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showEditAddCategory, setShowEditAddCategory] = useState(false);
   const [editNewCategoryName, setEditNewCategoryName] = useState('');
+  const [editFlyerImageData, setEditFlyerImageData] = useState<string | null>(null);
+  const [editDragActive, setEditDragActive] = useState(false);
 
   useEffect(() => {
     setTargetEnlace(enlaceType);
@@ -224,10 +226,17 @@ export default function EnlaceIzcalliView({
           loadedFlyers = dbFlyers.map(f => {
             let whatsapp = f.whatsapp || '';
             let phone = '';
-            if (whatsapp.includes('||phone:')) {
-              const parts = whatsapp.split('||phone:');
-              whatsapp = parts[0];
-              phone = parts[1] || '';
+            let target_enlace = 'izcalli';
+            if (whatsapp.includes('||')) {
+              const tokens = whatsapp.split('||');
+              whatsapp = tokens[0] || '';
+              tokens.forEach(token => {
+                if (token.startsWith('phone:')) {
+                  phone = token.substring(6);
+                } else if (token.startsWith('enlace:')) {
+                  target_enlace = token.substring(7);
+                }
+              });
             } else {
               phone = f.phone || '';
             }
@@ -241,7 +250,7 @@ export default function EnlaceIzcalliView({
               createdAt: f.created_at,
               whatsapp: whatsapp,
               phone: phone,
-              target_enlace: f.target_enlace || 'izcalli'
+              target_enlace: target_enlace as 'izcalli' | 'tlalnepantla' | 'ambas'
             };
           });
         } else if (flyerError) {
@@ -399,6 +408,77 @@ export default function EnlaceIzcalliView({
     }
   };
 
+  const processEditFile = (file: File) => {
+    if (file.size > 20 * 1024 * 1024) {
+      showFeedback('La imagen es demasiado grande. Máximo 20MB permitido.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 720;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
+          setEditFlyerImageData(compressedBase64);
+        } else {
+          setEditFlyerImageData(event.target?.result as string);
+        }
+      };
+      img.onerror = () => {
+        setEditFlyerImageData(event.target?.result as string);
+      };
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processEditFile(file);
+  };
+
+  const handleEditDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setEditDragActive(true);
+    } else if (e.type === "dragleave") {
+      setEditDragActive(false);
+    }
+  };
+
+  const handleEditDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processEditFile(e.dataTransfer.files[0]);
+    }
+  };
+
   // Submit new flyer
   const handlePublishFlyer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -447,7 +527,7 @@ export default function EnlaceIzcalliView({
     try {
       const supabase = getSupabase();
       if (supabase) {
-        const dbWhatsapp = ((newFlyer.whatsapp || '') + (newFlyer.phone ? `||phone:${newFlyer.phone}` : '')) || null;
+        const dbWhatsapp = [newFlyer.whatsapp || '', newFlyer.phone ? `phone:${newFlyer.phone}` : '', `enlace:${targetEnlace}`].filter(Boolean).join('||') || null;
         const { error } = await supabase.from('izcalli_flyers').insert([{
           id: newFlyer.id,
           title: newFlyer.title,
@@ -456,8 +536,7 @@ export default function EnlaceIzcalliView({
           creator_id: newFlyer.creatorId,
           creator_name: newFlyer.creatorName,
           created_at: newFlyer.createdAt,
-          whatsapp: dbWhatsapp,
-          target_enlace: targetEnlace
+          whatsapp: dbWhatsapp
         }]);
         if (!error) {
           dbSucceeded = true;
@@ -526,6 +605,7 @@ export default function EnlaceIzcalliView({
     setEditTargetEnlace(flyer.target_enlace || 'izcalli');
     setShowEditAddCategory(false);
     setEditNewCategoryName('');
+    setEditFlyerImageData(flyer.imageUrl || null);
   };
 
   // Safe save handler for adding custom category on-the-fly when editing
@@ -576,7 +656,8 @@ export default function EnlaceIzcalliView({
       phone: editPhone.trim() || undefined,
       whatsapp: editWhatsapp.trim() || undefined,
       category: editCategory,
-      target_enlace: editTargetEnlace
+      target_enlace: editTargetEnlace,
+      imageUrl: editFlyerImageData || editingFlyer.imageUrl
     };
 
     // Update state locally
@@ -595,13 +676,13 @@ export default function EnlaceIzcalliView({
     try {
       const supabase = getSupabase();
       if (supabase) {
-        const dbWhatsapp = ((updatedFlyer.whatsapp || '') + (updatedFlyer.phone ? `||phone:${updatedFlyer.phone}` : '')) || null;
+        const dbWhatsapp = [updatedFlyer.whatsapp || '', updatedFlyer.phone ? `phone:${updatedFlyer.phone}` : '', `enlace:${updatedFlyer.target_enlace}`].filter(Boolean).join('||') || null;
         const { error } = await supabase
           .from('izcalli_flyers')
           .update({
             whatsapp: dbWhatsapp,
             category_name: updatedFlyer.category,
-            target_enlace: updatedFlyer.target_enlace
+            image_url: editFlyerImageData || editingFlyer.imageUrl
           })
           .eq('id', editingFlyer.id);
 
@@ -1518,7 +1599,7 @@ export default function EnlaceIzcalliView({
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border border-black/5"
+              className="bg-white rounded-[32px] w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-black/5"
             >
               {/* Header */}
               <div className="p-6 bg-teal-950 text-white flex items-center justify-between border-b border-teal-900">
@@ -1537,6 +1618,58 @@ export default function EnlaceIzcalliView({
               {/* Form */}
               <form onSubmit={handleUpdateFlyerSubmit} className="p-6 space-y-4">
                 
+                {/* Imagen del Flyer */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-teal-600" />
+                    Imagen del Flyer
+                  </label>
+
+                  <div 
+                    onDragEnter={handleEditDrag}
+                    onDragOver={handleEditDrag}
+                    onDragLeave={handleEditDrag}
+                    onDrop={handleEditDrop}
+                    className={`relative w-full h-44 flex flex-col items-center justify-center border-2 border-dashed rounded-xl overflow-hidden cursor-pointer transition-all duration-300 ${
+                      editDragActive ? 'border-emerald-400 bg-emerald-50/20' : 'border-black/5 hover:border-teal-500/20 bg-gray-50'
+                    }`}
+                  >
+                    {editFlyerImageData ? (
+                      <div className="relative w-full h-full p-2 group bg-neutral-900">
+                        <img src={editFlyerImageData} className="w-full h-full object-contain mx-auto" alt="Preview Flyer" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditFlyerImageData(null);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-black text-white hover:text-red-400 rounded-full transition-all border border-white/10"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="w-full h-full flex flex-col items-center justify-center p-4 text-center select-none cursor-pointer">
+                        <div className="w-10 h-10 bg-white rounded-xl border border-black/5 flex items-center justify-center text-teal-950 mb-2 shadow-sm group-hover:scale-105 transition-transform">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-gray-850 tracking-tight leading-none mb-1">
+                          Arrastra tu nueva imagen de flyer aquí
+                        </span>
+                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                          o haz clic para examinar archivos
+                        </span>
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*" 
+                          onChange={handleEditFileChange} 
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
                 {/* Contact phone */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-black/40 px-2 tracking-widest flex items-center gap-1.5">
