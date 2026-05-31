@@ -2655,10 +2655,12 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
     });
   }, [coupons, zoneFilter]);
 
-  const categories = useMemo(() => 
-    ['Todos', ...Array.from(new Set(zoneFilteredCoupons.map(c => normalizeCategory(c.data.categoria))))].filter(Boolean),
-    [zoneFilteredCoupons]
-  );
+  const categories = useMemo(() => {
+    const list = Array.from(new Set(zoneFilteredCoupons.map(c => normalizeCategory(c.data.categoria))))
+      .filter((c): c is string => !!c)
+      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    return ['Todos', ...list];
+  }, [zoneFilteredCoupons]);
   
   const filteredCoupons = useMemo(() => {
     let result = zoneFilteredCoupons;
@@ -4593,7 +4595,11 @@ export default function App() {
     });
   }, [publishedCoupons, users, currentUser, currentRole]);
 
-  const existingCategories = Array.from(new Set(activeCoupons.map(c => normalizeCategory(c.data.categoria)))).filter(Boolean);
+  const existingCategories = useMemo(() => {
+    return Array.from(new Set(activeCoupons.map(c => normalizeCategory(c.data.categoria))))
+      .filter((c): c is string => !!c)
+      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  }, [activeCoupons]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [isFetchingSaved, setIsFetchingSaved] = useState(false);
   const [likedIds, setLikedIds] = useState<string[]>(() => {

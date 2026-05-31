@@ -124,9 +124,11 @@ export default function EnlaceIzcalliView({
     setLightboxBaseScale(1);
   }, [activeLightboxFlyer]);
 
-  // Dynamically filter categories to only show those that have at least one flyer
+  // Dynamically filter categories to only show those that have at least one flyer, sorted alphabetically
   const activeCategories = React.useMemo(() => {
-    return categories.filter(cat => filteredFlyersByEnlace.some(f => f.category === cat));
+    return categories
+      .filter(cat => filteredFlyersByEnlace.some(f => f.category === cat))
+      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
   }, [categories, filteredFlyersByEnlace]);
 
   // Cleanly auto-reset the selected category filter to 'Todos' if its active status disappears (e.g. after flyer deletion)
@@ -267,6 +269,8 @@ export default function EnlaceIzcalliView({
       }
     } catch (_) {}
 
+    loadedCategories.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
     setFlyers(loadedFlyers);
     setCategories(loadedCategories);
     if (loadedCategories.length > 0 && !loadedCategories.includes(selectedFormCategory)) {
@@ -286,7 +290,7 @@ export default function EnlaceIzcalliView({
       return;
     }
 
-    const updatedCats = Array.from(new Set([...categories, normalized]));
+    const updatedCats = Array.from(new Set([...categories, normalized])).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     setCategories(updatedCats);
     localStorage.setItem('izcalli_categories_local', JSON.stringify(updatedCats.filter(c => !DEFAULT_CATEGORIES.includes(c))));
     
@@ -523,7 +527,7 @@ export default function EnlaceIzcalliView({
       return;
     }
 
-    const updatedCats = Array.from(new Set([...categories, normalized]));
+    const updatedCats = Array.from(new Set([...categories, normalized])).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     setCategories(updatedCats);
     localStorage.setItem('izcalli_categories_local', JSON.stringify(updatedCats.filter(c => !DEFAULT_CATEGORIES.includes(c))));
     
