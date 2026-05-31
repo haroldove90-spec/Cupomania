@@ -750,6 +750,12 @@ export default function EnlaceIzcalliView({
             <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-emerald-300/80">
               Cartelera Digital Interactiva de Comercios y Flyers Publicitarios
             </p>
+            <div className="mt-3.5 flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl w-fit border border-white/10 shadow-inner">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-300">
+                {filteredFlyersByEnlace.length} {filteredFlyersByEnlace.length === 1 ? 'Negocio ( Flyer )' : 'Negocios ( Flyer )'}
+              </span>
+            </div>
           </div>
 
           <div className="flex gap-2">
