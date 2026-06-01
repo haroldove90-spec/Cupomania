@@ -57,8 +57,14 @@ export default function EnlaceIzcalliView({
   const [flyers, setFlyers] = useState<IzcalliFlyer[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [visibleCount, setVisibleCount] = useState<number>(24);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Reset visibleCount whenever chosen category changes for peak performance
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [selectedCategory]);
 
   // New Category input state
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -353,7 +359,7 @@ export default function EnlaceIzcalliView({
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 720; // Optimal constraint for sharp display and low memory/payload size
+        const maxDim = 1440; // High resolution constraint for crisp display of flyer text
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -371,8 +377,8 @@ export default function EnlaceIzcalliView({
         if (ctx) {
           // Draw image to canvas
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress with quality 0.50 to guarantee low memory & fast sync upload
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
+          // Compress with high quality 0.88 to guarantee crisp, sharp, non-pixelated text and images
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88);
           setFlyerImageData(compressedBase64);
         } else {
           setFlyerImageData(event.target?.result as string);
@@ -426,7 +432,7 @@ export default function EnlaceIzcalliView({
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 720;
+        const maxDim = 1440; // High resolution constraint for crisp display of flyer text
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -443,7 +449,7 @@ export default function EnlaceIzcalliView({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88);
           setEditFlyerImageData(compressedBase64);
         } else {
           setEditFlyerImageData(event.target?.result as string);
@@ -1030,8 +1036,9 @@ export default function EnlaceIzcalliView({
             ) : (
               /* Custom Responsive Grid */
               /* Mobile: 2 columns, Tablet: 4 columns, Desktop: 6 columns as requested */
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-                {filteredFlyers.map(flyer => (
+              <div className="flex flex-col gap-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+                  {filteredFlyers.slice(0, visibleCount).map(flyer => (
                   <motion.div
                     key={flyer.id}
                     layoutId={`flyer-card-${flyer.id}`}
@@ -1179,7 +1186,21 @@ export default function EnlaceIzcalliView({
                   </motion.div>
                 ))}
               </div>
-            )}
+
+              {/* Elegant Load More Button */}
+              {filteredFlyers.length > visibleCount && (
+                <div className="flex justify-center mt-6 pb-12">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 24)}
+                    className="px-8 py-3.5 bg-teal-950 hover:bg-teal-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-2.5 cursor-pointer select-none"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Ver más comercios ({filteredFlyers.length - visibleCount} ocultos)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           </>
         ) : (
           /* Subir / Administrar Flyers Form View */
