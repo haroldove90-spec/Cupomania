@@ -3416,14 +3416,21 @@ const WalletView = ({
 
                     {/* Floating One-Click Quick Contacts */}
                     {(flyer.whatsapp || flyer.phone) && (
-                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-25 gap-2 pointer-events-none">
+                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-30 gap-2 pointer-events-none">
                         <div className="flex gap-1.5 pointer-events-auto">
                           {flyer.whatsapp && (
                             <a
                               href={formatWhatsAppUrl(flyer.whatsapp)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const url = formatWhatsAppUrl(flyer.whatsapp);
+                                if (url) {
+                                  window.open(url, '_blank');
+                                  e.preventDefault();
+                                }
+                              }}
                               className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
                               title={`WhatsApp: ${flyer.whatsapp}`}
                             >
@@ -3531,6 +3538,13 @@ const WalletView = ({
                         href={formatWhatsAppUrl(activeLightboxFlyer.whatsapp)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                          const url = formatWhatsAppUrl(activeLightboxFlyer.whatsapp);
+                          if (url) {
+                            window.open(url, '_blank');
+                            e.preventDefault();
+                          }
+                        }}
                         className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
                       >
                         <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
