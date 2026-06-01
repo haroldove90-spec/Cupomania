@@ -20,7 +20,8 @@ import {
   Bookmark,
   Phone,
   MessageCircle,
-  ChevronDown
+  ChevronDown,
+  Users
 } from 'lucide-react';
 import { getSupabase } from '../lib/supabase';
 import { UserProfile, IzcalliFlyer } from '../types';
@@ -853,6 +854,23 @@ export default function EnlaceIzcalliView({
             <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-emerald-300/80">
               Cartelera Digital Interactiva de Comercios y Flyers Publicitarios
             </p>
+
+            {/* Mobile-only metrics of registered users */}
+            <div className="block sm:hidden mt-4 bg-white/10 border border-white/10 rounded-2xl p-3 select-none hover:bg-white/15 transition-colors">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1 px-2 rounded-xl bg-emerald-400 text-teal-950 flex items-center justify-center gap-1 font-black text-[11px] shadow-md">
+                  <Users className="w-3.5 h-3.5 text-teal-950 animate-pulse" />
+                  <span className="font-sans font-extrabold tracking-tight">6,570</span>
+                </div>
+                <div className="flex flex-col text-left leading-tight">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-white/90">Usuarios registrados</span>
+                  <span className="text-[7px] font-bold text-emerald-300 uppercase tracking-widest flex items-center gap-0.5 mt-0.5">
+                    <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                    Comunidad Activa
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2">

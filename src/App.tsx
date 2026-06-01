@@ -33,6 +33,7 @@ import {
   X,
   CreditCard,
   User,
+  Users,
   Calendar,
   LayoutGrid,
   Heart,
@@ -6550,13 +6551,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <header className={`h-16 md:h-24 border-b border-black/5 flex items-center justify-between px-4 md:px-10 bg-secondary shrink-0 z-[950] text-white shadow-xl fixed top-0 left-0 w-full transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'}`}>
-        <div className="flex items-center gap-3 md:gap-8">
+      <header className={`h-16 md:h-20 border-b border-black/5 flex items-center justify-between px-3 md:px-6 bg-secondary shrink-0 z-[950] text-white shadow-xl fixed top-0 left-0 w-full transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'}`}>
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-3 text-white hover:bg-white/10 rounded-2xl transition-all flex items-center justify-center border border-white/10"
+            className="p-2 md:p-2.5 text-white hover:bg-white/10 rounded-2xl transition-all flex items-center justify-center border border-white/10"
           >
-            {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isSidebarOpen ? <X className="w-5 h-5 md:w-6 h-6" /> : <Menu className="w-5 h-5 md:w-6 h-6" />}
           </button>
           
           <button 
@@ -6569,57 +6570,72 @@ export default function App() {
                 setActiveView('enlace_izcalli');
               }
             }}
-            className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            className="h-12 md:h-16 flex items-center gap-1.5 md:gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Enlace Izcalli Logo" className="h-full w-auto object-contain" />
-            <span className="text-lg md:text-2xl font-black uppercase tracking-tighter italic whitespace-nowrap">Enlace Izcalli</span>
+            <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Enlace Izcalli Logo" className="h-8 md:h-11 w-auto object-contain" />
+            <span className="text-sm md:text-lg font-black uppercase tracking-tighter italic whitespace-nowrap">Enlace Izcalli</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Métricas de usuarios registrados compactas y elegantes - Solo en pantallas grandes */}
+        <div className="hidden lg:flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-3 py-1.5 select-none group hover:bg-white/10 transition-colors">
+          <div className="p-1 px-2 rounded-xl bg-primary/20 text-primary flex items-center justify-center gap-1.5 font-black text-xs shadow-sm">
+            <Users className="w-3.5 h-3.5 text-primary animate-pulse" />
+            <span className="font-sans font-extrabold tracking-tight">6,570</span>
+          </div>
+          <div className="flex flex-col text-left leading-tight pr-1">
+            <span className="text-[9px] font-black uppercase tracking-wider text-white/60 group-hover:text-white transition-colors">Usuarios registrados</span>
+            <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+              Comunidad Activa
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
           {currentUser?.role === 'admin' && (
             <button
               onClick={() => setActiveView('admin_dashboard')}
-              className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[10.5px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
             >
-              <LayoutDashboard className="w-4 h-4" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Panel Control</span>
             </button>
           )}
           {currentUser && (
-            <div className="flex flex-col items-end hidden sm:flex text-right">
+            <div className="flex flex-col items-end hidden md:flex text-right">
               {currentUser.role === 'patrocinador' ? (
                 <>
-                  <span className="text-[11px] font-black uppercase tracking-widest">{currentUser.businessName}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">{currentUser.representativeName}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{currentUser.businessName}</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-white/50">{currentUser.representativeName}</span>
                 </>
               ) : currentUser.role === 'usuario' ? (
                 <>
-                  <span className="text-[11px] font-black uppercase tracking-widest">@{currentUser.username}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">{currentUser.name}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">@{currentUser.username}</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-white/50">{currentUser.name}</span>
                 </>
               ) : (
                 <>
-                  <span className="text-[11px] font-black uppercase tracking-widest">{currentUser.name}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">{currentUser.role}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{currentUser.name}</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-white/50">{currentUser.role}</span>
                 </>
               )}
             </div>
           )}
           <button 
             onClick={() => currentUser ? setActiveView('profile') : setIsAuthModalOpen(true)}
-            className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl border-2 transition-all flex items-center justify-center overflow-hidden bg-white/10 ${activeView === 'profile' ? 'border-primary ring-4 ring-primary/20 shadow-lg' : 'border-white/10 hover:border-white/30'}`}
+            className={`w-9 h-9 md:w-11 md:h-11 rounded-2xl border-2 transition-all flex items-center justify-center overflow-hidden bg-white/10 ${activeView === 'profile' ? 'border-primary ring-4 ring-primary/20 shadow-lg' : 'border-white/10 hover:border-white/30'}`}
           >
             {currentUser?.photo ? (
               <img src={currentUser.photo} className="w-full h-full object-cover" />
             ) : (
-              <User className="w-6 h-6 text-white" />
+              <User className="w-5 h-5 md:w-6 h-6 text-white" />
             )}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 relative w-full h-full overflow-y-auto pt-16 md:pt-24" id="root-scroll-area">
+      <main className="flex-1 relative w-full h-full overflow-y-auto pt-16 md:pt-20" id="root-scroll-area">
         {renderSidebar()}
         <section className={`transition-all duration-500 ${isSidebarOpen ? 'lg:pl-80' : 'pl-0'} pb-24 md:pb-0 relative w-full min-h-full flex flex-col`}>
           {currentUser?.role === 'admin' && (
