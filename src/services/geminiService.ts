@@ -8,7 +8,7 @@ import { BusinessData, CuponResponse } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-const SYSTEM_PROMPT = `Eres el Motor de Generación de Cupones de "Cuponmanía". Tu objetivo es procesar datos de un formulario y devolver una estructura técnica perfecta.
+const SYSTEM_PROMPT = `Eres el Motor de Generación de Cupones de "Enlace Izcalli". Tu objetivo es procesar datos de un formulario y devolver una estructura técnica perfecta.
 
 ### REGLAS ESTRICTAS DE CONTENIDO:
 1. NO INVENTAR: Solo usa el texto proporcionado en los campos "Nombre del Negocio", "Oferta Principal" y "Condiciones". No agregues frases genéricas.
@@ -18,12 +18,12 @@ const SYSTEM_PROMPT = `Eres el Motor de Generación de Cupones de "Cuponmanía".
    - Oferta (Texto principal, corto, directo).
    - Condiciones (Legible pero secundario).
    - Cronómetro (Calculado).
-   - Logo Cuponmanía (Pequeño, watermark).
+   - Logo Enlace Izcalli (Pequeño, watermark).
 
 ### REGLAS DE DISEÑO (ESTILO TICKET PREMIUM):
 1. COLOR: Extrae el color más oscuro o dominante del logo para el fondo ("color_primario"). Si el logo es muy claro, usa un gris casi negro (#121212) o azul marino muy oscuro (#0f172a). El diseño DEBE ser oscuro y elegante.
 2. LOGO PATROCINADOR: Debe mostrarse directamente sobre el fondo oscuro. PROHIBIDO encapsularlo en cajas blancas o grises (debe ser transparente). Si el logo tiene fondo blanco, el frontend intentará manejarlo, pero pide al usuario que prefiera logos con transparencia.
-3. LOGO CUPONMANÍA (https://cossma.com.mx/cuponmania.png): Debe aparecer en el JSON para ser usado como sello de autenticidad.
+3. LOGO ENLACE IZCALLI (https://cossma.com.mx/enlaceizcallilogo.png): Debe aparecer en el JSON para ser usado como sello de autenticidad.
 4. CRONÓMETRO: Calcula el "timestamp_final" usando la fecha actual + las horas de vigencia solicitadas.
 5. CÓDIGO DE CANJE: Genera un código único alfanumérico aleatorio de 8 caracteres.
 
@@ -36,7 +36,7 @@ const SYSTEM_PROMPT = `Eres el Motor de Generación de Cupones de "Cuponmanía".
     "categoria": "string_categoria",
     "condiciones": "string limpio con lineas separadas por \n",
     "cronometro": { "horas_totales": number, "timestamp_final": "ISO_DATE", "fecha_inicio": "string", "fecha_fin": "string" },
-    "branding": { "watermark_url": "https://cossma.com.mx/cuponmania.png", "position": "bottom-right" },
+    "branding": { "watermark_url": "https://cossma.com.mx/enlaceizcallilogo.png", "position": "bottom-right" },
     "diseno": { 
       "color_primario": "hex_oscuro", 
       "color_acento": "hex_contraste_brillante",

@@ -1,5 +1,5 @@
 {
-  "name": "Cuponmanía",
+  "name": "Enlace Izcalli",
   "description": "La red de cupones más grande de Izcalli y Tlalnepantla. Generación de ofertas con IA y marketplace local.",
   "requestFramePermissions": ["notifications"],
   "majorCapabilities": ["AI Content Generation", "Visual Asset Design"]

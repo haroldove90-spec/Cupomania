@@ -1,20 +1,20 @@
 {
-  "name": "Cuponmanía",
-  "short_name": "Cuponmanía",
-  "description": "Tu motor inteligente de cupones premium",
+  "name": "Enlace Izcalli",
+  "short_name": "Enlace Izcalli",
+  "description": "Enlace Izcalli - Directorio y Cuponera Comercial",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#F57C00",
   "icons": [
     {
-      "src": "https://cossma.com.mx/cuponmaniaicono.png",
+      "src": "https://cossma.com.mx/enlaceizcalliicono.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cossma.com.mx/cuponmaniaicono.png",
+      "src": "https://cossma.com.mx/enlaceizcalliicono.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -22,7 +22,7 @@
   ],
   "screenshots": [
     {
-      "src": "https://cossma.com.mx/cuponmaniasplash.png",
+      "src": "https://cossma.com.mx/enlaceizcallisplash.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",

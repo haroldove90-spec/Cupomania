@@ -372,7 +372,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }:
                <img 
                  src="https://cossma.com.mx/cuponmaniaflyer2.png" 
                  className="w-full h-auto" 
-                 alt="Promoción Cuponmanía" 
+                 alt="Promoción Enlace Izcalli" 
                />
             </div>
             
@@ -470,7 +470,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }:
       {/* Footer */}
       <footer className="py-12 px-6 bg-gray-50 border-t border-black/5 text-center">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-          <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía" className="h-10 object-contain grayscale opacity-50" />
+          <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Enlace Izcalli" className="h-10 object-contain opacity-70" />
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40">
             Desarrollada por: <span className="text-black transition-colors hover:text-primary">App Design</span> - Todos los derechos reservados 2026
           </p>
@@ -487,7 +487,7 @@ const LandingPageView = ({ onJoin, onExplore, registrationForm, onShowPrivacy }:
 
       {/* Watermark Logo */}
       <div className="fixed bottom-6 right-6 z-[100] opacity-30 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
-        <img src="https://cossma.com.mx/cuponmania.png" className="w-12 h-12 object-contain" alt="Cuponmanía" />
+        <img src="https://cossma.com.mx/enlaceizcallilogo.png" className="w-12 h-12 object-contain" alt="Enlace Izcalli" />
       </div>
     </div>
   );
@@ -1205,7 +1205,7 @@ const PrivacyPolicy = ({ onBack }: { onBack: () => void }) => {
         <div className="space-y-8 text-black/70 leading-relaxed text-sm md:text-base font-medium">
           <section>
             <h2 className="text-xl font-black uppercase text-black mb-4">Identidad y Domicilio del Responsable</h2>
-            <p>Cuponmanía, con domicilio en Alamo No. 8, Col. Los Reyes Iztacala, Tlalnepantla de Baz, Estado de México, C.P. 54090, es el responsable del tratamiento de los datos personales que usted nos proporcione a través de la plataforma.</p>
+            <p>Enlace Izcalli, con domicilio en Alamo No. 8, Col. Los Reyes Iztacala, Tlalnepantla de Baz, Estado de México, C.P. 54090, es el responsable del tratamiento de los datos personales que usted nos proporcione a través de la plataforma.</p>
           </section>
 
           <section>
@@ -1221,7 +1221,7 @@ const PrivacyPolicy = ({ onBack }: { onBack: () => void }) => {
             <h2 className="text-xl font-black uppercase text-black mb-4">Finalidades del Tratamiento</h2>
             <p className="mb-4">Los datos personales que recabamos serán utilizados para las siguientes finalidades necesarias para la prestación del servicio:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Gestionar el alta y publicación de su negocio en el directorio comercial de Cuponmanía.</li>
+              <li>Gestionar el alta y publicación de su negocio en el directorio comercial de Enlace Izcalli.</li>
               <li>Difundir sus ofertas y promociones dentro de la plataforma y redes sociales asociadas.</li>
               <li>Establecer contacto para fines de soporte técnico, aclaraciones sobre la suscripción y procesos de cobranza.</li>
               <li>Informar sobre actualizaciones, nuevas funcionalidades o cambios en los términos del servicio.</li>
@@ -1386,7 +1386,7 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
         className="w-full max-w-md bg-white rounded-[40px] p-8 sm:p-12 shadow-2xl border border-black/5"
       >
         <div className="text-center mb-10">
-          <img src="https://cossma.com.mx/cuponmania.png" className="h-16 mx-auto mb-6" alt="Cuponmania" />
+          <img src="https://cossma.com.mx/enlaceizcallilogo.png" className="h-16 mx-auto mb-6 object-contain" alt="Enlace Izcalli" />
           <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">{isRegister ? 'Registro' : 'Ingresar'}</h2>
           <p className="text-xs text-black/40 font-bold uppercase tracking-widest">{isRegister ? 'Únete a la red de beneficios' : 'Bienvenido de nuevo'}</p>
         </div>
@@ -1599,7 +1599,7 @@ const AuthView = ({ onAuth, users, upsertProfile, onBack, initialRole = 'usuario
             onClick={onBack}
             className="w-full mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-black/20 hover:text-black transition-all pt-4 border-t border-black/5"
           >
-            <Home className="w-4 h-4" /> Regresar a Cuponmanía
+            <Home className="w-4 h-4" /> Regresar a Enlace Izcalli
           </button>
         )}
       </motion.div>
@@ -1721,7 +1721,7 @@ const CouponTicket = ({ config, logo, scale = 1, origin = 'origin-top-left' }: {
             {/* Super discrete watermark */}
             <div className="flex items-center gap-2 opacity-30 grayscale hover:grayscale-0 transition-all">
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Auténtico</span>
-              <img src="https://cossma.com.mx/cuponmania.png" alt="Seal" className="h-4 object-contain" />
+              <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Seal" className="h-4 object-contain" />
             </div>
           </div>
         </div>
@@ -1890,7 +1890,7 @@ const CouponPreview = ({ config, logo, onReset, onPublish, onSaveDraft, showFeed
           height: 550,
           backgroundColor: bgColor
         });
-        const fileName = `cupon-cuponmania-${config.data.header.nombre_negocio.toLowerCase().replace(/\s+/g, '-')}.png`;
+        const fileName = `cupon-enlaceizcalli-${config.data.header.nombre_negocio.toLowerCase().replace(/\s+/g, '-')}.png`;
         download(dataUrl, fileName);
         showFeedback('¡Cupón exportado con éxito!');
       } catch (err: any) { 
@@ -2177,7 +2177,7 @@ const SponsorModal = ({ sponsor, isOpen, onClose }: { sponsor: UserProfile; isOp
 
             {/* Footer Logo */}
               <div className="flex flex-col items-center pt-8 opacity-10">
-                <img src="https://cossma.com.mx/cuponmania.png" className="h-6 grayscale" alt="Cuponmania" />
+                <img src="https://cossma.com.mx/enlaceizcallilogo.png" className="h-6 grayscale" alt="Enlace Izcalli" />
                 <p className="text-[8px] font-black uppercase tracking-widest mt-2">Sello de autenticidad</p>
               </div>
           </motion.div>
@@ -2213,7 +2213,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
 
   const handleShare = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const shareText = `¡Mira este súper cupón de ${coupon.data.header.nombre_negocio} - "${coupon.data.oferta.texto}" en Cuponmanía!`;
+    const shareText = `¡Mira este súper cupón de ${coupon.data.header.nombre_negocio} - "${coupon.data.oferta.texto}" en Enlace Izcalli!`;
     const shareTitle = `Cupón de ${coupon.data.header.nombre_negocio}`;
     
     if (navigator.share) {
@@ -2258,7 +2258,7 @@ const CouponCard = memo(({ coupon, onSave, onLike, isSaved, isLiked, sponsor, on
   };
 
   const copyToClipboard = () => {
-    const text = `¡Descubre este cupón de ${coupon.data.header.nombre_negocio} en Cuponmanía! Oferta: ${coupon.data.oferta.texto} - Sigue este enlace para más novedades: ${window.location.href}`;
+    const text = `¡Descubre este cupón de ${coupon.data.header.nombre_negocio} en Enlace Izcalli! Oferta: ${coupon.data.oferta.texto} - Sigue este enlace para más novedades: ${window.location.href}`;
     navigator.clipboard.writeText(text).then(() => {
       if (showFeedback) {
         showFeedback('¡Copiado al portapapeles para compartir!');
@@ -2743,7 +2743,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
       <div className="max-w-[1500px] mx-auto px-6 md:px-12 pt-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-2 sm:mb-0 leading-none">
-            {zoneFilter === 'tlalnepantla' ? 'Cuponmanía Tlalnepantla' : zoneFilter === 'izcalli' ? 'Cuponmanía Izcalli' : 'Explorar Cupones'}
+            {zoneFilter === 'tlalnepantla' ? 'Enlace Tlalnepantla' : zoneFilter === 'izcalli' ? 'Enlace Izcalli' : 'Explorar Cupones'}
           </h2>
           <button 
             type="button"
@@ -2899,7 +2899,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
         <div className="flex flex-col items-center justify-center min-h-[400px] text-black/20 bg-white rounded-[40px] border border-dashed border-black/10 px-6 text-center shadow-sm py-12">
           <Ticket className="w-16 h-16 mb-6 opacity-40 text-primary animate-bounce" />
           <h3 className="font-black uppercase tracking-tighter text-lg md:text-xl text-black/80 mb-2">
-            Próximamente Cuponmanía {zoneFilter === 'tlalnepantla' ? 'Tlalnepantla' : 'Izcalli'}
+            Próximamente Enlace {zoneFilter === 'tlalnepantla' ? 'Tlalnepantla' : 'Izcalli'}
           </h3>
           <p className="text-[11px] text-black/50 font-bold max-w-md uppercase tracking-wider leading-relaxed">
             Espera muy pronto las promociones de la zona.
@@ -3345,7 +3345,7 @@ const WalletView = ({
             <div className="flex flex-col items-center justify-center h-64 text-black/20">
               <Heart className="w-16 h-16 mb-4" />
               <p className="font-bold uppercase tracking-widest text-center">Tu cuponera está vacía</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-black/30 mt-2">Visita la sección Cuponmanía para guardar cupones</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/30 mt-2">Visita la sección Enlace Izcalli para guardar cupones</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
@@ -3972,12 +3972,12 @@ const PwaInstallPrompt = ({ onInstall, onDismiss }: { onInstall: () => void; onD
         </div>
         
         <div className="flex flex-col items-center text-center gap-6">
-          <div className="w-24 h-24 bg-primary/5 rounded-[30%] flex items-center justify-center p-4">
-            <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía" className="w-full h-full object-contain" />
+          <div className="w-24 h-24 flex items-center justify-center">
+            <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Enlace Izcalli" className="w-full h-full object-contain" />
           </div>
           
           <div>
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Instala Cuponmanía</h3>
+            <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Instala Enlace Izcalli</h3>
             <p className="text-sm text-black/50 font-medium leading-relaxed">
               Accede a tus cupones favoritos al instante desde tu pantalla de inicio, sin navegadores.
             </p>
@@ -4055,7 +4055,7 @@ export default function App() {
         .upsert({ key: 'cuponmania_config', value: { enabled } }, { onConflict: 'key' });
       
       if (!error) {
-        showFeedback(`Módulo Cuponmanía ${enabled ? 'activado' : 'desactivado'} con éxito`);
+        showFeedback(`Módulo Cupones ${enabled ? 'activado' : 'desactivado'} con éxito`);
       } else {
         console.error('Supabase error saving cuponmania setting:', error);
         showFeedback('Guardado localmente', 'success');
@@ -4595,7 +4595,7 @@ export default function App() {
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
           setDeferredPrompt(null);
-          showFeedback('¡App de Cuponmanía instalada con éxito!', 'success');
+          showFeedback('¡App de Enlace Izcalli instalada con éxito!', 'success');
         }
       } catch (err) {
         console.error("Install prompt error:", err);
@@ -5720,10 +5720,10 @@ export default function App() {
           <div className="flex flex-col h-full bg-white relative">
             <div className="p-8 pb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-white rounded-xl overflow-hidden p-1 shadow-sm border border-black/5">
-                   <img src="https://cossma.com.mx/cuponmania.png" className="w-full h-full object-contain" alt="Logo" />
+                 <div className="h-10 flex items-center justify-center">
+                   <img src="https://cossma.com.mx/enlaceizcallilogo.png" className="h-10 w-auto object-contain" alt="Logo" />
                  </div>
-                 <span className="text-xl font-black tracking-tighter">CUPONMANÍA</span>
+                 <span className="text-xl font-black tracking-tighter">ENLACE IZCALLI</span>
               </div>
               <button 
                 onClick={() => setIsSidebarOpen(false)}
@@ -5744,7 +5744,7 @@ export default function App() {
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cupones Izcalli</span>
                     </button>
                   )}
 
@@ -5761,7 +5761,7 @@ export default function App() {
                      <Megaphone className="w-5 h-5" /> <span>Enlace Izcalli</span>
                   </button>
                   <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                     <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                     <LayoutGrid className="w-5 h-5" /> <span>Cupones Izcalli</span>
                   </button>
                   <button onClick={() => setActiveView('landing')} className={navItemClasses('landing')}>
                      <Home className="w-5 h-5" /> <span>Promociona tu negocio</span>
@@ -5781,7 +5781,7 @@ export default function App() {
 
                   {cuponmaniaEnabled && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cupones Izcalli</span>
                     </button>
                   )}
 
@@ -5805,7 +5805,7 @@ export default function App() {
 
                   {(cuponmaniaEnabled || currentRole === 'patrocinador') && (
                     <button onClick={() => setActiveView('marketplace')} className={navItemClasses('marketplace')}>
-                       <LayoutGrid className="w-5 h-5" /> <span>Cuponmanía Izcalli</span>
+                       <LayoutGrid className="w-5 h-5" /> <span>Cupones Izcalli</span>
                     </button>
                   )}
 
@@ -6277,14 +6277,14 @@ export default function App() {
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Panel de Control</h2>
             <AdminMetricsView metrics={adminMetrics} />
 
-            {/* Control de Módulo Cuponmanía */}
+            {/* Control de Módulo Cupones */}
             <div className="mt-8 p-6 bg-white rounded-[32px] border border-black/5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-2xl shrink-0 transition-all ${cuponmaniaEnabled ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                   <Ticket className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Módulo Cuponmanía</h3>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Módulo Cupones</h3>
                   <p className="text-xs text-black/40 font-bold uppercase tracking-widest leading-none mt-1">
                     Estado actual: <span className={cuponmaniaEnabled ? 'text-green-600 font-extrabold' : 'text-red-600 font-extrabold'}>{cuponmaniaEnabled ? 'ACTIVO (PÚBLICO)' : 'DESACTIVADO (OCULTO PARA USUARIOS)'}</span>
                   </p>
@@ -6571,8 +6571,8 @@ export default function App() {
             }}
             className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <img src="https://cossma.com.mx/cuponmania.png" alt="Cuponmanía Logo" className="h-full w-auto object-contain" />
-            <span className="text-lg md:text-2xl font-black uppercase tracking-tighter italic whitespace-nowrap">Cuponmanía</span>
+            <img src="https://cossma.com.mx/enlaceizcallilogo.png" alt="Enlace Izcalli Logo" className="h-full w-auto object-contain" />
+            <span className="text-lg md:text-2xl font-black uppercase tracking-tighter italic whitespace-nowrap">Enlace Izcalli</span>
           </button>
         </div>
 
@@ -6630,7 +6630,7 @@ export default function App() {
                 </div>
                 <div>
                   <p className="text-[12px] font-black uppercase tracking-tight text-gray-900">
-                    Control Administrativo del Módulo Cuponmanía
+                    Control Administrativo del Módulo Cupones
                   </p>
                   <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mt-1">
                     Estado: <span className={cuponmaniaEnabled ? 'text-green-600 font-extrabold' : 'text-red-500 font-extrabold'}>{cuponmaniaEnabled ? '✅ ACTIVO (PÚBLICO)' : '❌ DESACTIVADO (OCULTO PARA PÚBLICO)'}</span>
@@ -6782,7 +6782,7 @@ export default function App() {
                   <Smartphone className="w-7 h-7" />
                 </div>
 
-                <h3 className="text-base md:text-lg font-black uppercase tracking-tight">Instalar Cuponmanía</h3>
+                <h3 className="text-base md:text-lg font-black uppercase tracking-tight">Instalar Enlace Izcalli</h3>
                 <p className="text-[9px] md:text-[10px] text-emerald-400 uppercase tracking-widest font-bold mt-0.5">Disfruta la app en tu móvil u ordenador</p>
               </div>
 
@@ -6901,9 +6901,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Sello de autenticidad Cuponmanía */}
+      {/* Sello de autenticidad Enlace Izcalli */}
       <div className="fixed bottom-24 right-6 z-[2000] opacity-20 hover:opacity-100 transition-opacity pointer-events-none sm:pointer-events-auto">
-        <img src="https://cossma.com.mx/cuponmania.png" className="w-10 h-10 object-contain grayscale hover:grayscale-0 transition-all" alt="Sello de Autenticidad" />
+        <img src="https://cossma.com.mx/enlaceizcallilogo.png" className="w-10 h-10 object-contain grayscale hover:grayscale-0 transition-all" alt="Sello de Autenticidad" />
       </div>
 
     </div>
