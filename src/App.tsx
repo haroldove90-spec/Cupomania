@@ -4626,7 +4626,7 @@ export default function App() {
   useEffect(() => {
     if (!cuponmaniaEnabled && currentRole !== 'admin' && currentRole !== 'patrocinador') {
       if (activeView === 'marketplace' || activeView === 'wallet') {
-        setActiveView('landing');
+        setActiveView('enlace_izcalli');
       }
     }
   }, [cuponmaniaEnabled, currentRole, activeView]);
@@ -6560,8 +6560,10 @@ export default function App() {
             onClick={() => {
               if (currentUser?.role === 'admin') {
                 setActiveView('admin_dashboard');
+              } else if (currentUser?.role === 'patrocinador') {
+                setActiveView('generator');
               } else {
-                setActiveView(cuponmaniaEnabled ? 'marketplace' : 'landing');
+                setActiveView('enlace_izcalli');
               }
             }}
             className="h-14 md:h-24 flex items-center py-2 gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
