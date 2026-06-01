@@ -3129,7 +3129,8 @@ const WalletView = ({
           const { data: dbFlyers, error } = await supabase
             .from('izcalli_flyers')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(50);
           if (!error && dbFlyers) {
             loadedFlyers = dbFlyers.map(f => {
               let whatsapp = f.whatsapp || '';

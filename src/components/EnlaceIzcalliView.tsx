@@ -217,11 +217,12 @@ export default function EnlaceIzcalliView({
           loadedCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCats.map(c => c.name)]));
         }
 
-        // Fetch flyers
+        // Fetch flyers - limit to 50 of the most recent ones for ultra-fast load times
         const { data: dbFlyers, error: flyerError } = await supabase
           .from('izcalli_flyers')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(50);
 
         if (!flyerError && dbFlyers) {
           loadedFlyers = dbFlyers.map(f => {
@@ -981,9 +982,10 @@ export default function EnlaceIzcalliView({
 
             {/* Main Showcase Gallery */}
             {isLoading ? (
-              <div className="py-24 text-center">
-                <div className="w-12 h-12 border-4 border-black/10 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-xs font-black uppercase tracking-widest text-black/40">Cargando Cartelera Digital...</p>
+              <div className="py-20 text-center max-w-md mx-auto bg-white/50 backdrop-blur-md rounded-[32px] p-8 border border-black/5 shadow-sm mt-6">
+                <div className="w-12 h-12 border-4 border-black/10 border-t-teal-700 rounded-full animate-spin mx-auto mb-5" />
+                <p className="text-xs font-black uppercase tracking-widest text-[#0f2d26] animate-pulse">Espere un momento por favor...</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-black/40 mt-3">Cargando la cartelera digital y los negocios locales...</p>
               </div>
             ) : filteredFlyers.length === 0 ? (
               <div className="bg-white rounded-[40px] p-16 text-center border border-black/5 max-w-xl mx-auto shadow-sm mt-8">
