@@ -35,6 +35,7 @@ interface EnlaceIzcalliViewProps {
   onToggleSaveFlyer: (flyerId: string) => void;
   onToggleLikeFlyer: (flyerId: string) => void;
   enlaceType?: 'izcalli' | 'tlalnepantla';
+  registeredUsersCount?: number;
 }
 
 const DEFAULT_CATEGORIES = ['Comida', 'Servicios', 'Entretenimiento', 'Deportes', 'Educación', 'Salud', 'Hogar', 'Moda'];
@@ -46,7 +47,8 @@ export default function EnlaceIzcalliView({
   likedFlyerIds = [],
   onToggleSaveFlyer,
   onToggleLikeFlyer,
-  enlaceType = 'izcalli'
+  enlaceType = 'izcalli',
+  registeredUsersCount = 6570
 }: EnlaceIzcalliViewProps) {
   // Navigation states
   const [activeTab, setActiveTab] = useState<'gallery' | 'manage'>('gallery');
@@ -860,7 +862,7 @@ export default function EnlaceIzcalliView({
               <div className="flex items-center gap-2.5">
                 <div className="p-1 px-2 rounded-xl bg-emerald-400 text-teal-950 flex items-center justify-center gap-1 font-black text-[11px] shadow-md">
                   <Users className="w-3.5 h-3.5 text-teal-950 animate-pulse" />
-                  <span className="font-sans font-extrabold tracking-tight">6,570</span>
+                  <span className="font-sans font-extrabold tracking-tight">{(registeredUsersCount || 6570).toLocaleString('en-US')}</span>
                 </div>
                 <div className="flex flex-col text-left leading-tight">
                   <span className="text-[9px] font-black uppercase tracking-wider text-white/90">Usuarios registrados</span>

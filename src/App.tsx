@@ -4023,6 +4023,63 @@ export default function App() {
     return saved === null ? true : saved === 'true';
   });
 
+  const [registeredUsersCount, setRegisteredUsersCount] = useState<number>(() => {
+    const saved = localStorage.getItem('registered_users_count_local');
+    return saved ? parseInt(saved, 10) : 6570;
+  });
+
+  const [inputUsersCount, setInputUsersCount] = useState<string>(() => {
+    const saved = localStorage.getItem('registered_users_count_local');
+    return saved || '6570';
+  });
+
+  useEffect(() => {
+    setInputUsersCount(String(registeredUsersCount));
+  }, [registeredUsersCount]);
+
+  const fetchRegisteredUsersCount = async () => {
+    try {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'registered_users_count')
+        .maybeSingle();
+
+      if (!error && data && data.value) {
+        const val = data.value as any;
+        const count = typeof val === 'number' ? val : (val?.count ?? 6570);
+        setRegisteredUsersCount(count);
+        localStorage.setItem('registered_users_count_local', String(count));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch registered users count:', err);
+    }
+  };
+
+  const updateRegisteredUsersCount = async (count: number) => {
+    setRegisteredUsersCount(count);
+    localStorage.setItem('registered_users_count_local', String(count));
+    try {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'registered_users_count', value: count }, { onConflict: 'key' });
+
+      if (!error) {
+        showFeedback('Métrica de usuarios registrada con éxito');
+      } else {
+        console.error('Supabase error saving registered users count:', error);
+        showFeedback('Guardado localmente', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving users count:', err);
+      showFeedback('Guardado localmente', 'success');
+    }
+  };
+
   const fetchCuponmaniaSettings = async () => {
     try {
       const supabase = getSupabase();
@@ -4119,6 +4176,7 @@ export default function App() {
   useEffect(() => {
     fetchFlyerSettings();
     fetchCuponmaniaSettings();
+    fetchRegisteredUsersCount();
   }, []);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -6308,6 +6366,47 @@ export default function App() {
               </button>
             </div>
 
+            {/* Control de Métrica de Usuarios Registrados */}
+            <div className="mt-6 p-6 bg-white rounded-[32px] border border-black/5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="p-4 rounded-2xl bg-teal-50 text-[#008F9A] shrink-0">
+                  <Users className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Métrica: Usuarios Registrados</h3>
+                  <p className="text-xs text-black/40 font-bold uppercase tracking-widest leading-none mt-1">
+                    Valor actual en web: <span className="text-teal-600 font-extrabold">{(registeredUsersCount || 6570).toLocaleString('en-US')}</span>
+                  </p>
+                  <p className="text-[10px] text-black/50 font-medium leading-relaxed mt-2 max-w-xl">
+                    Este número se muestra en el header en pantallas de escritorio y en la tarjeta de bienvenida de Enlace Izcalli / Tlalnepantla en dispositivos móviles. Puedes cambiarlo libremente.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                <input
+                  type="number"
+                  value={inputUsersCount}
+                  onChange={(e) => setInputUsersCount(e.target.value)}
+                  className="w-full md:w-32 px-4 py-3 bg-gray-50 border border-black/10 rounded-xl font-bold font-sans text-center text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-black"
+                  placeholder="6570"
+                />
+                <button
+                  onClick={() => {
+                    const parsed = parseInt(inputUsersCount, 10);
+                    if (isNaN(parsed) || parsed < 0) {
+                      showFeedback('Por favor, ingresa un número de usuarios válido.', 'error');
+                      return;
+                    }
+                    updateRegisteredUsersCount(parsed);
+                  }}
+                  className="px-6 py-3 bg-primary hover:bg-primary/95 text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-md transition-all whitespace-nowrap active:scale-95 cursor-pointer"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+
             <div className="mt-12">
               <h3 className="text-xl font-black uppercase tracking-tight mb-6">Actividad Reciente</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -6379,6 +6478,7 @@ export default function App() {
             onToggleSaveFlyer={handleToggleSaveFlyer}
             onToggleLikeFlyer={handleToggleLikeFlyer}
             enlaceType="izcalli"
+            registeredUsersCount={registeredUsersCount}
           />
         );
       case 'enlace_tlalnepantla':
@@ -6391,6 +6491,7 @@ export default function App() {
             onToggleSaveFlyer={handleToggleSaveFlyer}
             onToggleLikeFlyer={handleToggleLikeFlyer}
             enlaceType="tlalnepantla"
+            registeredUsersCount={registeredUsersCount}
           />
         );
       case 'privacy':
@@ -6581,7 +6682,7 @@ export default function App() {
         <div className="hidden lg:flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-3 py-1.5 select-none group hover:bg-white/10 transition-colors">
           <div className="p-1 px-2 rounded-xl bg-primary/20 text-primary flex items-center justify-center gap-1.5 font-black text-xs shadow-sm">
             <Users className="w-3.5 h-3.5 text-primary animate-pulse" />
-            <span className="font-sans font-extrabold tracking-tight">6,570</span>
+            <span className="font-sans font-extrabold tracking-tight">{(registeredUsersCount || 6570).toLocaleString('en-US')}</span>
           </div>
           <div className="flex flex-col text-left leading-tight pr-1">
             <span className="text-[9px] font-black uppercase tracking-wider text-white/60 group-hover:text-white transition-colors">Usuarios registrados</span>
