@@ -3407,7 +3407,7 @@ const WalletView = ({
                       alt={flyer.title}
                     />
                     
-                    <div className="absolute inset-0 bg-teal-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white z-10">
+                    <div className="absolute inset-0 bg-teal-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white z-10 pointer-events-none">
                       <ZoomIn className="w-6 h-6 animate-pulse" />
                       <span className="text-[8px] font-black uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-md">
                         Ver Mas Grande
@@ -3416,7 +3416,7 @@ const WalletView = ({
 
                     {/* Floating One-Click Quick Contacts */}
                     {(flyer.whatsapp || flyer.phone) && (
-                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-25 gap-2 pointer-events-none">
+                      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-30 gap-2 pointer-events-none">
                         <div className="flex gap-1.5 pointer-events-auto">
                           {flyer.whatsapp && (
                             <a
@@ -3424,7 +3424,7 @@ const WalletView = ({
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                              className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
                               title={`WhatsApp: ${flyer.whatsapp}`}
                             >
                               <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
@@ -3434,7 +3434,7 @@ const WalletView = ({
                             <a
                               href={`tel:${flyer.phone}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                              className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
                               title={`Llamar: ${flyer.phone}`}
                             >
                               <Phone className="w-4 h-4 fill-white text-indigo-500" />
@@ -3525,13 +3525,14 @@ const WalletView = ({
 
                 {/* Direct tactile contact buttons for Lightbox */}
                 {(activeLightboxFlyer.whatsapp || activeLightboxFlyer.phone) && (
-                  <div className="flex flex-wrap gap-2 mt-3 select-none">
+                  <div className="flex flex-wrap gap-2 mt-3 relative z-[1020] pointer-events-auto">
                     {activeLightboxFlyer.whatsapp && (
                       <a
                         href={formatWhatsAppUrl(activeLightboxFlyer.whatsapp)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all cursor-pointer"
                       >
                         <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
                         <span>Chat de WhatsApp</span>
@@ -3540,7 +3541,8 @@ const WalletView = ({
                     {activeLightboxFlyer.phone && (
                       <a
                         href={`tel:${activeLightboxFlyer.phone}`}
-                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all cursor-pointer"
                       >
                         <Phone className="w-4 h-4 fill-white text-indigo-500" />
                         <span>Llamar por Teléfono</span>
