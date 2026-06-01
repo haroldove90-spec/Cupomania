@@ -1053,28 +1053,40 @@ export default function EnlaceIzcalliView({
                         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-30 gap-2 pointer-events-none">
                           <div className="flex gap-1.5 pointer-events-auto">
                             {flyer.whatsapp && (
-                              <a
-                                href={formatWhatsAppUrl(flyer.whatsapp)}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
+                                  const url = formatWhatsAppUrl(flyer.whatsapp);
+                                  if (url) {
+                                    const win = window.open(url, '_blank');
+                                    if (!win || win.closed || typeof win.closed === 'undefined') {
+                                      window.location.href = url;
+                                    }
+                                  }
                                 }}
-                                className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
                                 title={`WhatsApp: ${flyer.whatsapp}`}
                               >
                                 <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
-                              </a>
+                              </button>
                             )}
                             {flyer.phone && (
-                              <a
-                                href={`tel:${flyer.phone}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all"
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  window.location.href = `tel:${flyer.phone}`;
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
                                 title={`Llamar: ${flyer.phone}`}
                               >
                                 <Phone className="w-4 h-4 fill-white text-indigo-500" />
-                              </a>
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1435,25 +1447,40 @@ export default function EnlaceIzcalliView({
                 {(activeLightboxFlyer.whatsapp || activeLightboxFlyer.phone) && (
                   <div className="flex flex-wrap gap-2 mt-3 select-none">
                     {activeLightboxFlyer.whatsapp && (
-                      <a
-                        href={formatWhatsAppUrl(activeLightboxFlyer.whatsapp)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const url = formatWhatsAppUrl(activeLightboxFlyer.whatsapp);
+                          if (url) {
+                            const win = window.open(url, '_blank');
+                            if (!win || win.closed || typeof win.closed === 'undefined') {
+                              window.location.href = url;
+                            }
+                          }
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all cursor-pointer"
                       >
                         <MessageCircle className="w-4 h-4 fill-white text-emerald-500" />
                         <span>Chat de WhatsApp</span>
-                      </a>
+                      </button>
                     )}
                     {activeLightboxFlyer.phone && (
-                      <a
-                        href={`tel:${activeLightboxFlyer.phone}`}
-                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `tel:${activeLightboxFlyer.phone}`;
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white flex items-center gap-2 shadow-lg hover:scale-105 transition-all cursor-pointer"
                       >
                         <Phone className="w-4 h-4 fill-white text-indigo-500" />
                         <span>Llamar por Teléfono</span>
-                      </a>
+                      </button>
                     )}
                   </div>
                 )}
