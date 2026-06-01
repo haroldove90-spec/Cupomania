@@ -176,10 +176,11 @@ export default function EnlaceIzcalliView({
   const formatWhatsAppUrl = (phone: string) => {
     const clean = phone.replace(/\D/g, '');
     if (!clean) return '';
+    const message = encodeURIComponent('!! Vi tu negocio en Enlace izcalli, necesito más información !!');
     if (clean.length > 10 && (clean.startsWith('52') || clean.startsWith('1'))) {
-      return `https://wa.me/${clean}`;
+      return `https://wa.me/${clean}?text=${message}`;
     }
-    return `https://wa.me/52${clean}`;
+    return `https://wa.me/52${clean}?text=${message}`;
   };
 
   const loadData = async () => {
@@ -828,9 +829,10 @@ export default function EnlaceIzcalliView({
     });
   };
 
-  const filteredFlyers = selectedCategory === 'Todos' 
+  const filteredFlyers = (selectedCategory === 'Todos' 
     ? filteredFlyersByEnlace 
-    : filteredFlyersByEnlace.filter(f => f.category === selectedCategory);
+    : filteredFlyersByEnlace.filter(f => f.category === selectedCategory)
+  ).slice(0, 20);
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'patrocinador';
 

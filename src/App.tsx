@@ -1986,7 +1986,12 @@ const CouponPreview = ({ config, logo, onReset, onPublish, onSaveDraft, showFeed
               {sponsor.whatsapp && (
                 <div 
                   className="flex-1 bg-green-50 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:bg-green-100 transition-colors"
-                  onClick={() => window.open(`https://wa.me/${sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
+                  onClick={() => {
+                    const cleanPhone = sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '').replace(/\D/g, '');
+                    const optPhone = cleanPhone.startsWith('52') || cleanPhone.length > 10 ? cleanPhone : `52${cleanPhone}`;
+                    const msg = encodeURIComponent('!! Vi tu negocio en Enlace izcalli, necesito más información !!');
+                    window.open(`https://wa.me/${optPhone}?text=${msg}`, '_blank');
+                  }}
                 >
                   <MessageCircle className="w-4 h-4 text-green-500" />
                   <span className="text-[9px] font-black uppercase tracking-widest">WhatsApp</span>
@@ -2090,7 +2095,12 @@ const SponsorModal = ({ sponsor, isOpen, onClose }: { sponsor: UserProfile; isOp
 
                   {sponsor.whatsapp && (
                     <div className="bg-green-50/30 p-4 rounded-[24px] border border-green-500/10 flex items-start gap-4 group hover:bg-green-100/50 transition-colors cursor-pointer"
-                      onClick={() => window.open(`https://wa.me/${sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
+                      onClick={() => {
+                        const cleanPhone = sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '').replace(/\D/g, '');
+                        const optPhone = cleanPhone.startsWith('52') || cleanPhone.length > 10 ? cleanPhone : `52${cleanPhone}`;
+                        const msg = encodeURIComponent('!! Vi tu negocio en Enlace izcalli, necesito más información !!');
+                        window.open(`https://wa.me/${optPhone}?text=${msg}`, '_blank');
+                      }}
                     >
                       <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <MessageCircle className="w-4 h-4 text-green-600" />
@@ -2121,7 +2131,10 @@ const SponsorModal = ({ sponsor, isOpen, onClose }: { sponsor: UserProfile; isOp
                 <div className="flex flex-col gap-3 pt-2">
                   {sponsor.whatsapp && (
                     <a 
-                      href={`https://wa.me/${sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '')}`}
+                      href={`https://wa.me/${(() => {
+                        const cleanPhone = sponsor.whatsapp.replace(/\+/g, '').replace(/\s/g, '').replace(/\D/g, '');
+                        return cleanPhone.startsWith('52') || cleanPhone.length > 10 ? cleanPhone : `52${cleanPhone}`;
+                      })()}?text=${encodeURIComponent('!! Vi tu negocio en Enlace izcalli, necesito más información !!')}`}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="w-full bg-[#25D366] text-white hover:bg-[#128C7E] p-5 rounded-[20px] flex items-center justify-center gap-3 transition-all group shadow-xl active:scale-95 text-[11px] font-black uppercase tracking-widest"
@@ -2707,7 +2720,7 @@ const MarketplaceView = ({ coupons, savedIds, likedIds, onSave, onLike, onShowFl
         }
       });
     }
-    return result;
+    return result.slice(0, 20);
   }, [zoneFilteredCoupons, selectedCategory, selectedEnlaceFilter, zoneFilter]);
 
   return (
@@ -3089,10 +3102,11 @@ const WalletView = ({
   const formatWhatsAppUrl = (phone: string) => {
     const clean = phone.replace(/\D/g, '');
     if (!clean) return '';
+    const message = encodeURIComponent('!! Vi tu negocio en Enlace izcalli, necesito más información !!');
     if (clean.length > 10 && (clean.startsWith('52') || clean.startsWith('1'))) {
-      return `https://wa.me/${clean}`;
+      return `https://wa.me/${clean}?text=${message}`;
     }
-    return `https://wa.me/52${clean}`;
+    return `https://wa.me/52${clean}?text=${message}`;
   };
   const [isFetchingFlyers, setIsFetchingFlyers] = useState(false);
 
