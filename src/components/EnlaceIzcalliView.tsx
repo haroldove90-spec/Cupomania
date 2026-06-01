@@ -220,12 +220,12 @@ export default function EnlaceIzcalliView({
           loadedCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCats.map(c => c.name)]));
         }
 
-        // Fetch flyers - limit to 50 of the most recent ones for ultra-fast load times
+        // Fetch flyers - limit to 1000 of the most recent ones for ultra-fast load times and to see all flyers
         const { data: dbFlyers, error: flyerError } = await supabase
           .from('izcalli_flyers')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(1000);
 
         if (!flyerError && dbFlyers) {
           loadedFlyers = dbFlyers.map(f => {

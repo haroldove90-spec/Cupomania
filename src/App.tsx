@@ -3131,7 +3131,7 @@ const WalletView = ({
             .from('izcalli_flyers')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(1000);
           if (!error && dbFlyers) {
             loadedFlyers = dbFlyers.map(f => {
               let whatsapp = f.whatsapp || '';
