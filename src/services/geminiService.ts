@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessData, CuponResponse } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -126,22 +126,17 @@ export async function extractContactInfoFromFlyer(base64Image: string): Promise<
     console.error("Error processing base64 image logo data:", e);
   }
 
-  const promptText = `Analiza detalladamente este flyer publicitario o imagen de anuncio para extraer la información de contacto del negocio o evento.
-Específicamente:
-1. El número telefónico para WhatsApp (prioriza números de WhatsApp indicados con ícono de whatsapp o palabra "WhatsApp", o "whats").
-2. El número telefónico tradicional o fijo para llamadas normales (si hay uno diferente, general o etiquetado como "Tel" o "Contacto").
+  const promptText = `Analiza detalladamente este flyer publicitario o imagen de anuncio comercial para extraer la información de contacto (WhatsApp y teléfono tradicional).
+Busca exhaustivamente en todas las secciones de la imagen (encabezados, textos grandes, textos pequeños, marcas de agua, leyendas al lado de logotipos verdes o iconos de llamada).
 
-REGLAS EXTREMAS:
-- Devuelve la información estrictamente en formato JSON válido.
-- Los números de teléfono deben tener ÚNICAMENTE dígitos enteros, sin espacios, paréntesis ni guiones. Limítalos a un formato numérico limpio de 10 dígitos (ej. "5512345678" para México) o completo con prefijo (ej. "525512345678").
-- Si no encuentras ninguno de los números mencionados, establece el campo correspondiente como null.
-- NO agregues texto antes o después del JSON. No uses explicaciones adicionales.
+Pautas de extracción:
+1. "whatsapp": Busca números asociados con palabras clave como "WhatsApp", "Whats", "Wsp", "escríbenos", "mensaje", o junto al ícono verde celular de WhatsApp.
+2. "phone": Busca números marcados con "Tel", "Teléfono", "Cel", "Llámanos", "Llamar", o el ícono tradicional de teléfono o auricular. Si hay un único número en toda la imagen que sirve para ambas cosas, colócalo en ambas propiedades.
 
-FORMATO DE RETORNO (JSON):
-{
-  "whatsapp": "string_or_null",
-  "phone": "string_or_null"
-}`;
+REGLAS DE SEGURIDAD Y LIMPIEZA:
+- Extrae el número completo. Si contiene espacios, guiones, paréntesis o símbolos especiales (ej. "55 1234-5678", "(55)12345678", "52-1-55-1234-5678"), devuélvelo como un texto limpio conteniendo únicamente los dígitos numéricos enteros.
+- El resultado ideal de cada campo debe ser un string conteniendo los dígitos numéricos.
+- Si no hay ningún WhatsApp o número telefónico presente en la imagen de forma absoluta, escribe null para el campo correspondiente.`;
 
   contents.push({ text: promptText });
 
@@ -150,7 +145,21 @@ FORMATO DE RETORNO (JSON):
       model: "gemini-3.5-flash",
       contents: contents,
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            whatsapp: {
+              type: Type.STRING,
+              description: "Dígitos del número de WhatsApp encontrado en el flyer, o null si no se encuentra ninguno."
+            },
+            phone: {
+              type: Type.STRING,
+              description: "Dígitos del teléfono de contacto convencional o celular encontrado en el flyer, o null si no se encuentra ninguno."
+            }
+          },
+          required: ["whatsapp", "phone"]
+        }
       }
     });
 
@@ -163,9 +172,20 @@ FORMATO DE RETORNO (JSON):
     }
     
     const parsed = JSON.parse(jsonContent);
+
+    // Clean up function to securely strip any non-digit remaining characters from the AI output
+    const cleanNumber = (val: any) => {
+      if (!val) return null;
+      const strVal = String(val).trim();
+      if (strVal.toLowerCase() === 'null' || strVal === '') return null;
+      const digitsOnly = strVal.replace(/\D/g, '');
+      // Validate length to ensure it represents a plausible phone line
+      return digitsOnly.length >= 7 ? digitsOnly : null;
+    };
+    
     return {
-      whatsapp: parsed.whatsapp || null,
-      phone: parsed.phone || null
+      whatsapp: cleanNumber(parsed.whatsapp),
+      phone: cleanNumber(parsed.phone)
     };
   } catch (error) {
     console.error("Error calling Gemini or parsing contact extraction:", error);
