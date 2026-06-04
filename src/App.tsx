@@ -5412,8 +5412,7 @@ export default function App() {
         timestamp_final: coupon.data.cronometro.timestamp_final,
         creator_id: finalUserId,
         is_published: isPublic,
-        image_data: imageData,
-        target_enlace: formData.target_enlace || 'izcalli'
+        image_data: imageData
       }]);
 
       if (error) {
