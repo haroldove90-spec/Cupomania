@@ -73,7 +73,7 @@ Fecha Fin: ${data.fecha_fin}`;
   contents.push({ text: promptText });
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.5-flash",
     contents: contents,
     config: {
       systemInstruction: SYSTEM_PROMPT,

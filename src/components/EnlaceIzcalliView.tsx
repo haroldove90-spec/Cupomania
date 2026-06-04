@@ -162,15 +162,29 @@ export default function EnlaceIzcalliView({
     const extractContacts = async () => {
       setIsExtractingContacts(true);
       try {
-        const result = await extractContactInfoFromFlyer(flyerImageData);
-        if (result.whatsapp) {
-          setFlyerWhatsapp(result.whatsapp);
+        const apiResponse = await fetch('/api/extract-contacts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ image: flyerImageData })
+        });
+        
+        if (!apiResponse.ok) {
+          throw new Error('Error al extraer información desde el servidor de IA');
         }
-        if (result.phone) {
-          setFlyerPhone(result.phone);
-        }
-        if (result.whatsapp || result.phone) {
-          showFeedback('¡Información de contacto extraída por IA con éxito!', 'success');
+        
+        const result = await apiResponse.json();
+        if (result) {
+          if (result.whatsapp) {
+            setFlyerWhatsapp(result.whatsapp);
+          }
+          if (result.phone) {
+            setFlyerPhone(result.phone);
+          }
+          if (result.whatsapp || result.phone) {
+            showFeedback('¡Información de contacto extraída por IA con éxito!', 'success');
+          }
         }
       } catch (err) {
         console.error('Error extracting contacts:', err);
@@ -1359,10 +1373,15 @@ export default function EnlaceIzcalliView({
                       <div className="flex-1">
                         <input 
                           type="text"
-                          required
                           placeholder="Nombre de la nueva categoría..."
                           value={newCategoryName}
                           onChange={e => setNewCategoryName(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCategory();
+                            }
+                          }}
                           className="w-full bg-white border border-black/5 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none"
                         />
                       </div>

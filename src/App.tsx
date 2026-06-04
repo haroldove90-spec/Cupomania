@@ -5507,7 +5507,27 @@ export default function App() {
     setCoupon(null);
     
     try {
-      const response = await generateCoupon(formData);
+      const apiResponse = await fetch('/api/generate-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!apiResponse.ok) {
+        let errMsg = 'Error en el servidor de IA';
+        try {
+          const errJson = await apiResponse.json();
+          errMsg = errJson.error || errMsg;
+        } catch (_) {
+          const errText = await apiResponse.text();
+          errMsg = errText || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+
+      const response = await apiResponse.json();
       if (response && response.result) {
         setCoupon(response.result);
         // Usamos un pequeño delay para asegurar que el estado se actualizó y no mostramos error previo
