@@ -513,14 +513,40 @@ export default function EnlaceIzcalliView({
     }
 
     setIsSubmitting(true);
+    let finalCategory = selectedFormCategory;
+
+    // Automatic category creation if they typed a new name but did not click "Alta"
+    if (showAddCategory && newCategoryName.trim()) {
+      const normalized = newCategoryName.trim();
+      finalCategory = normalized;
+
+      if (!categories.some(c => c.toLowerCase() === normalized.toLowerCase())) {
+        const updatedCats = Array.from(new Set([...categories, normalized])).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        setCategories(updatedCats);
+        localStorage.setItem('izcalli_categories_local', JSON.stringify(updatedCats.filter(c => !DEFAULT_CATEGORIES.includes(c))));
+        
+        try {
+          const supabase = getSupabase();
+          if (supabase) {
+            await supabase.from('izcalli_categories').insert([{ name: normalized }]);
+          }
+        } catch (err) {
+          console.warn('Silent database write error for category:', err);
+        }
+      }
+      setSelectedFormCategory(normalized);
+      setNewCategoryName('');
+      setShowAddCategory(false);
+    }
+
     const creatorName = currentUser?.businessName || currentUser?.name || 'Patrocinador';
     const creatorId = currentUser?.id || 'anonymous';
 
     const newFlyer: IzcalliFlyer = {
       id: crypto.randomUUID(),
-      title: `Flyer (${selectedFormCategory}) - ${creatorName}`,
+      title: `Flyer (${finalCategory}) - ${creatorName}`,
       imageUrl: flyerImageData,
-      category: selectedFormCategory,
+      category: finalCategory,
       creatorId,
       creatorName,
       createdAt: new Date().toISOString(),
@@ -675,12 +701,41 @@ export default function EnlaceIzcalliView({
     if (!editingFlyer) return;
 
     setIsUpdating(true);
+    let finalCategory = editCategory;
+
+    // Automatic category creation on edit if they typed a new name but did not click the confirmation button
+    if (showEditAddCategory && editNewCategoryName.trim()) {
+      const normalized = editNewCategoryName.trim();
+      finalCategory = normalized;
+
+      if (!categories.some(c => c.toLowerCase() === normalized.toLowerCase())) {
+        const updatedCats = Array.from(new Set([...categories, normalized])).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+        setCategories(updatedCats);
+        localStorage.setItem('izcalli_categories_local', JSON.stringify(updatedCats.filter(c => !DEFAULT_CATEGORIES.includes(c))));
+        
+        try {
+          const supabase = getSupabase();
+          if (supabase) {
+            await supabase.from('izcalli_categories').insert([{ name: normalized }]);
+          }
+        } catch (err) {
+          console.warn('Silent database write error for category:', err);
+        }
+      }
+      setEditCategory(normalized);
+      setEditNewCategoryName('');
+      setShowEditAddCategory(false);
+    }
     
+    const creatorName = editingFlyer.creatorName || 'Patrocinador';
+    const newTitle = `Flyer (${finalCategory}) - ${creatorName}`;
+
     const updatedFlyer: IzcalliFlyer = {
       ...editingFlyer,
+      title: newTitle,
       phone: editPhone.trim() || undefined,
       whatsapp: editWhatsapp.trim() || undefined,
-      category: editCategory,
+      category: finalCategory,
       target_enlace: editTargetEnlace,
       imageUrl: editFlyerImageData || editingFlyer.imageUrl
     };
@@ -705,6 +760,7 @@ export default function EnlaceIzcalliView({
         const { error } = await supabase
           .from('izcalli_flyers')
           .update({
+            title: updatedFlyer.title,
             whatsapp: dbWhatsapp,
             category_name: updatedFlyer.category,
             image_url: editFlyerImageData || editingFlyer.imageUrl

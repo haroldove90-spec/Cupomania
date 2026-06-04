@@ -6,7 +6,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessData, CuponResponse } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+let aiInstance: GoogleGenAI | null = null;
+
+function getGeminiClient(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "Falta la clave de API 'GEMINI_API_KEY'. Por favor, configúrala en Google AI Studio haciendo clic en el engrane de Ajustes (esquina superior o barra lateral) -> Claves API y Secretos (Settings -> API Keys & Secrets) para activar la Inteligencia Artificial."
+      );
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 const SYSTEM_PROMPT = `Eres el Motor de Generación de Cupones de "Enlace Izcalli". Tu objetivo es procesar datos de un formulario y devolver una estructura técnica perfecta.
 
@@ -72,7 +85,7 @@ Fecha Fin: ${data.fecha_fin}`;
 
   contents.push({ text: promptText });
 
-  const response = await ai.models.generateContent({
+  const response = await getGeminiClient().models.generateContent({
     model: "gemini-3.5-flash",
     contents: contents,
     config: {
@@ -141,7 +154,7 @@ REGLAS DE SEGURIDAD Y LIMPIEZA:
   contents.push({ text: promptText });
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getGeminiClient().models.generateContent({
       model: "gemini-3.5-flash",
       contents: contents,
       config: {
