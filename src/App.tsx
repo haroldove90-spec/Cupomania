@@ -5518,11 +5518,15 @@ export default function App() {
       if (!apiResponse.ok) {
         let errMsg = 'Error en el servidor de IA';
         try {
-          const errJson = await apiResponse.json();
-          errMsg = errJson.error || errMsg;
-        } catch (_) {
           const errText = await apiResponse.text();
-          errMsg = errText || errMsg;
+          try {
+            const errJson = JSON.parse(errText);
+            errMsg = errJson.error || errJson.message || errMsg;
+          } catch (_) {
+            errMsg = errText || errMsg;
+          }
+        } catch (_) {
+          // Fallback if reading text fails
         }
         throw new Error(errMsg);
       }
