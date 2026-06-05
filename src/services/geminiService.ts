@@ -122,8 +122,8 @@ export async function extractContactInfoFromFlyer(base64Image: string): Promise<
   
   try {
     if (base64Image) {
-      const parts = base64Image.split(',');
-      if (parts.length > 1) {
+      if (base64Image.includes(',')) {
+        const parts = base64Image.split(',');
         const header = parts[0];
         const base64 = parts[1];
         const mimeType = header.split(':')[1].split(';')[0];
@@ -133,10 +133,17 @@ export async function extractContactInfoFromFlyer(base64Image: string): Promise<
             mimeType: mimeType
           }
         });
+      } else {
+        contents.push({
+          inlineData: {
+            data: base64Image,
+            mimeType: "image/jpeg"
+          }
+        });
       }
     }
   } catch (e) {
-    console.error("Error processing base64 image logo data:", e);
+    console.error("Error processing base64 image data:", e);
   }
 
   const promptText = `Analiza detalladamente este flyer publicitario o imagen de anuncio comercial para extraer la información de contacto (WhatsApp y teléfono tradicional).
