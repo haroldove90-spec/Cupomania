@@ -87,7 +87,7 @@ Fecha Fin: ${data.fecha_fin}`;
 
   const response = await getGeminiClient().models.generateContent({
     model: "gemini-3.5-flash",
-    contents: contents,
+    contents: { parts: contents },
     config: {
       systemInstruction: SYSTEM_PROMPT,
       responseMimeType: "application/json"
@@ -156,7 +156,7 @@ REGLAS DE SEGURIDAD Y LIMPIEZA:
   try {
     const response = await getGeminiClient().models.generateContent({
       model: "gemini-3.5-flash",
-      contents: contents,
+      contents: { parts: contents },
       config: {
         responseMimeType: "application/json",
         responseSchema: {

@@ -186,8 +186,9 @@ export default function EnlaceIzcalliView({
             showFeedback('¡Información de contacto extraída por IA con éxito!', 'success');
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error extracting contacts:', err);
+        showFeedback(`No se pudo extraer contactos: ${err.message || 'Error de red o servidor'}`, 'error');
       } finally {
         setIsExtractingContacts(false);
       }
