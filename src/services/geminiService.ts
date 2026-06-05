@@ -66,9 +66,10 @@ export async function generateCoupon(data: BusinessData): Promise<CuponResponse>
   if (data.logo_data) {
     const [header, base64] = data.logo_data.split(',');
     const mimeType = header.split(':')[1].split(';')[0];
+    const cleanBase64 = base64.replace(/\s/g, '');
     contents.push({
       inlineData: {
-        data: base64,
+        data: cleanBase64,
         mimeType: mimeType
       }
     });
@@ -127,16 +128,18 @@ export async function extractContactInfoFromFlyer(base64Image: string): Promise<
         const header = parts[0];
         const base64 = parts[1];
         const mimeType = header.split(':')[1].split(';')[0];
+        const cleanBase64 = base64.replace(/\s/g, '');
         contents.push({
           inlineData: {
-            data: base64,
+            data: cleanBase64,
             mimeType: mimeType
           }
         });
       } else {
+        const cleanBase64 = base64Image.replace(/\s/g, '');
         contents.push({
           inlineData: {
-            data: base64Image,
+            data: cleanBase64,
             mimeType: "image/jpeg"
           }
         });

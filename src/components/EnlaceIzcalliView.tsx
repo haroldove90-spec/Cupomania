@@ -170,8 +170,20 @@ export default function EnlaceIzcalliView({
           body: JSON.stringify({ image: flyerImageData })
         });
         
+        const contentType = apiResponse.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('El servidor de Inteligencia Artificial (IA) no está disponible en este host. Si estás en Vercel, recuerda que requieres un servidor backend de Node.js activo o el link de AI Studio / Cloud Run con soporte completo para procesar imágenes.');
+        }
+        
         if (!apiResponse.ok) {
-          throw new Error('Error al extraer información desde el servidor de IA');
+          let errMsg = 'Error al extraer información desde el servidor de IA';
+          try {
+            const errData = await apiResponse.json();
+            if (errData && errData.error) {
+              errMsg = `${errMsg}: ${errData.error}`;
+            }
+          } catch (e) {}
+          throw new Error(errMsg);
         }
         
         const result = await apiResponse.json();
